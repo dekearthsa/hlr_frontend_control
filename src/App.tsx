@@ -11,7 +11,7 @@ function App() {
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="font-mono">
+    <div className="font-mono w-full bg-black">
       <BrowserRouter>
         {/* Sidebar (fixed + slide in/out) */}
         <div>
@@ -27,23 +27,15 @@ function App() {
           </motion.aside>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="absolute  left-0 top-0 z-50  transform mt-5 ml-4 bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition"
+            className="fixed  left-0 top-0 z-50  transform mt-5 ml-4 bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition"
             aria-label="toggle sidebar"
           >
             {open ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
           </button>
         </div>
-{/* 
-        <motion.main
-          className="min-h-screen w-full"
-          initial={false}
-          animate={{ marginLeft: open ? SIDEBAR_WIDTH : 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        > */}
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-          </Routes>
-        {/* </motion.main> */}
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+        </Routes>
       </BrowserRouter>
     </div>
   );

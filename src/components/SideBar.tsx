@@ -117,7 +117,7 @@ const SideBar = () => {
   return (
     <div className="fixed rounded-r-2xl left-0 top-0 h-screen w-[540px] bg-gray-900 text-gray-100 flex flex-col justify-between shadow-lg">
       {/* Header */}
-      <div className="p-6 text-2xl font-bold tracking-wider border-b border-gray-700">
+      <div className="p-6 text-2xl text-center font-bold tracking-wider border-b border-gray-700">
         Envalic<span className="text-blue-500">Panel</span>
       </div>
 
