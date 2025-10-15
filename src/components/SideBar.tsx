@@ -118,7 +118,7 @@ const SideBar = () => {
     <div className="fixed rounded-r-2xl left-0 top-0 h-screen w-[540px] bg-gray-900 text-gray-100 flex flex-col justify-between shadow-lg">
       {/* Header */}
       <div className="p-6 text-2xl text-center font-bold tracking-wider border-b border-gray-700">
-        Envalic<span className="text-blue-500">Panel</span>
+        <span className="text-blue-500">SSSD</span>CartridgeTest
       </div>
 
       {/* Panel input */}
@@ -146,12 +146,15 @@ const SideBar = () => {
 
           {/* Fan volt */}
           <div className="grid grid-cols-12 items-center gap-3">
-            <label className="col-span-5 text-sm text-gray-300">Fan volt</label>
+            <label className="col-span-5 text-sm text-gray-300">
+              Fan volt (max 10) reset ค้าง 806182 กดค้าง C
+            </label>
             <input
               type="number"
               className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               min={0}
               step={0.1}
+              max={10}
               value={regen.fanVolt}
               onChange={(e) =>
                 setRegen((s) => ({ ...s, fanVolt: Number(e.target.value) }))
@@ -211,12 +214,15 @@ const SideBar = () => {
 
           {/* Fan volt */}
           <div className="grid grid-cols-12 items-center gap-3">
-            <label className="col-span-5 text-sm text-gray-300">Fan volt</label>
+            <label className="col-span-5 text-sm text-gray-300">
+              Fan volt (max 10)
+            </label>
             <input
               type="number"
               className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               min={0}
               step={0.1}
+              max={10}
               value={scab.fanVolt}
               onChange={(e) =>
                 setScab((s) => ({ ...s, fanVolt: Number(e.target.value) }))

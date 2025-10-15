@@ -18,12 +18,82 @@ const HTTP_API = "http://localhost:3011";
 
 const Dashboard = () => {
   // ── Mock data
-  // const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
+  const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
   const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
   const [isSystemRunning, setIsSystemRunning] = useState(false);
 
-  // const getLastestIAQData = async (data) => {};
+  const getLastestIAQData = async (data: any) => {
+    console.log("data =>. ", data);
+    const arraySensor1 = [];
+    const arraySensor2 = [];
+    const arraySensor3 = [];
+    const arraySensor4 = [];
+    for (const el of data) {
+      if (el.sensor_id === "1") {
+        arraySensor1.push(el);
+      } else if (el.sensor_id === "2") {
+        arraySensor2.push(el);
+      } else if (el.sensor_id === "3") {
+        arraySensor3.push(el);
+      } else if (el.sensor_id === "4") {
+        arraySensor4.push(el);
+      }
+    }
+    console.log("arraySensor2 => ", arraySensor2);
+    const latest1 =
+      arraySensor1.length > 0
+        ? arraySensor1[arraySensor1.length - 1]
+        : {
+            id: "-",
+            sensor_id: 0,
+            dateTime: 0,
+            co2: 0,
+            humidity: 0,
+            temperature: 0,
+            mode: "",
+          };
+    const latest2 =
+      arraySensor2.length > 0
+        ? arraySensor2[arraySensor2.length - 1]
+        : {
+            id: "-",
+            sensor_id: 0,
+            dateTime: 0,
+            co2: 0,
+            humidity: 0,
+            temperature: 0,
+            mode: "",
+          };
+    const latest3 =
+      arraySensor3.length > 0
+        ? arraySensor3[arraySensor3.length - 1]
+        : {
+            id: "-",
+            sensor_id: 0,
+            dateTime: 0,
+            co2: 0,
+            humidity: 0,
+            temperature: 0,
+            mode: "",
+          };
+    const latest4 =
+      arraySensor4.length > 0
+        ? arraySensor4[arraySensor4.length - 1]
+        : {
+            id: "-",
+            sensor_id: 0,
+            dateTime: 0,
+            co2: 0,
+            humidity: 0,
+            temperature: 0,
+            mode: "",
+          };
+    console.log("latest1 => ", latest1);
+    const arrayData = [latest1, latest2, latest3, latest4];
+    console.log("arrayData => ", arrayData);
+    setNewestIAQ(arrayData);
+  };
 
   const fetchFristTime = async () => {
     const ms = Date.now();
@@ -38,6 +108,7 @@ const Dashboard = () => {
     console.log(hlrData.data);
     setIsMode("idle");
     setIsSystemRunning(false);
+    getLastestIAQData(hlrData.data);
   };
 
   useEffect(() => {
@@ -262,20 +333,45 @@ const Dashboard = () => {
           </div>
           <div className={`${isMode === ""}`}>Mode: {isMode}</div>
         </div>
-        <div>
-          <div className="ml-5 mr-5 border-[1px] border-gray-500 rounded-md h-[200px] flex justify-around p-3">
-            <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center">
-              <div>CO2 (ppm)</div>
-              <div className="mt-10 text-[23px]">300</div>
-            </div>
-            <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center">
-              <div>Temperature (C)</div>
-              <div className="mt-10 text-[23px]">23.4</div>
-            </div>
-            <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center">
-              <div>Humidity (%RH)</div>
-              <div className="mt-10 text-[23px]">45 %</div>
-            </div>
+        <div className="">
+          <div className="ml-5 mr-5 border-[1px] border-gray-500 rounded-md h-[100%]   p-3">
+            {isNewestIAQ?.map((el: any, index: number) => {
+              if (el.id !== "-") {
+                return (
+                  <div>
+                    <div className="mt-5 mb-5 ml-3">
+                      <span className="border-b-[1px]">
+                        Sensor ID: {el.sensor_id}
+                      </span>
+                      <span className="text-[13px] text-gray-600 ml-5">
+                        Update {new Date(el.datetime).getDate()}/
+                        {new Date(el.datetime).getMonth() + 1}/
+                        {new Date(el.datetime).getFullYear()}{" "}
+                        {new Date(el.datetime).getHours()}:
+                        {new Date(el.datetime).getMinutes()}:
+                        {new Date(el.datetime).getSeconds()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 mt-3" key={index}>
+                      <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto ">
+                        <div>CO2 (ppm)</div>
+                        <div className="mt-10 text-[23px]">{el.co2}</div>
+                      </div>
+                      <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
+                        <div>Temperature (C)</div>
+                        <div className="mt-10 text-[23px]">
+                          {el.temperature}
+                        </div>
+                      </div>
+                      <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
+                        <div>Humidity (%RH)</div>
+                        <div className="mt-10 text-[23px]">{el.humidity} %</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            })}
           </div>
           <div className="p-4 text-[20px] font-semibold text-gray-100">
             CO2 (ppm)
