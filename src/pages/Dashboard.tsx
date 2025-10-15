@@ -1,31 +1,29 @@
 import { useMemo, useState, useEffect } from "react";
 import ReactApexChart from "react-apexcharts";
-import type { ApexOptions } from "apexcharts";
+// import type { ApexOptions } from "apexcharts";
 import axios from "axios";
-import useSWR from "swr";
+// import useSWR from "swr";
 
 const HTTP_API = "http://localhost:3011";
-interface structData {
-  sensor_id: string;
-  datetime: number;
-  value: number;
-}
 
-interface iaqDataStruct {
-  id: number;
-  datetime: number;
-  sensor_id: string;
-  co2: number;
-  temperature: number;
-  humidity: number;
-  mode: string;
-}
+// interface typeNewestIAQ {
+//   id: number;
+//   sensor_id: string;
+//   dateTime: number;
+//   co2: number;
+//   humidity: number;
+//   temperature: number;
+//   mode: string;
+// }
 
 const Dashboard = () => {
   // ── Mock data
+  // const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
   const [isMode, setIsMode] = useState("idle");
-  const [iaq, setIaq] = useState<any>([]);
+  const [iaq, setIaq] = useState<any[]>([]);
   const [isSystemRunning, setIsSystemRunning] = useState(false);
+
+  // const getLastestIAQData = async (data) => {};
 
   const fetchFristTime = async () => {
     const ms = Date.now();
@@ -38,6 +36,8 @@ const Dashboard = () => {
     const hlrData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
     setIaq(hlrData.data);
     console.log(hlrData.data);
+    setIsMode("idle");
+    setIsSystemRunning(false);
   };
 
   useEffect(() => {
@@ -102,7 +102,7 @@ const Dashboard = () => {
   }, [iaq]);
 
   // ── Chart options (Dark Mode)
-  const optionsCo2: ApexOptions = {
+  const optionsCo2: any = {
     theme: { mode: "dark" },
     chart: {
       id: "co2-line",
@@ -144,13 +144,13 @@ const Dashboard = () => {
       theme: "dark",
       shared: true, // hover รวมหลายเส้น
       x: { format: "HH:mm" },
-      y: { formatter: (val) => `${val?.toFixed?.(0)} ppm` },
+      y: { formatter: (val: any) => `${val?.toFixed?.(0)} ppm` },
     },
     grid: { borderColor: "#334155" },
     colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
   };
 
-  const optionsTemp: ApexOptions = {
+  const optionsTemp: any = {
     theme: { mode: "dark" },
     chart: {
       id: "temp-line",
@@ -192,13 +192,13 @@ const Dashboard = () => {
       theme: "dark",
       shared: true, // hover รวมหลายเส้น
       x: { format: "HH:mm" },
-      y: { formatter: (val) => `${val?.toFixed?.(0)} C` },
+      y: { formatter: (val: any) => `${val?.toFixed?.(0)} C` },
     },
     grid: { borderColor: "#334155" },
     colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
   };
 
-  const optionsHumid: ApexOptions = {
+  const optionsHumid: any = {
     theme: { mode: "dark" },
     chart: {
       id: "humid-line",
@@ -240,7 +240,7 @@ const Dashboard = () => {
       theme: "dark",
       shared: true, // hover รวมหลายเส้น
       x: { format: "HH:mm" },
-      y: { formatter: (val) => `${val?.toFixed?.(0)} %RH` },
+      y: { formatter: (val: any) => `${val?.toFixed?.(0)} %RH` },
     },
     grid: { borderColor: "#334155" },
     colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
