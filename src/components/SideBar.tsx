@@ -23,6 +23,7 @@ const STORAGE_KEY = "panel-formats";
 
 const SideBar = () => {
   const [title, setTitle] = useState("");
+  const [isCyc, setCyc] = useState(0);
   const [regen, setRegen] = useState<RegenSettings>({
     fanVolt: 12,
     heaterTemp: 60,
@@ -126,7 +127,9 @@ const SideBar = () => {
         {/* Title */}
         <section className="space-y-4 mt-1">
           <div className="grid grid-cols-12 items-center gap-3">
-            <label className="col-span-5 text-sm text-gray-300">Title</label>
+            <label className="col-span-5 text-sm text-gray-300">
+              Cyclic test
+            </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -254,6 +257,30 @@ const SideBar = () => {
 
         <hr className="border-gray-700" />
 
+        <section className="space-y-3">
+          <h4 className="text-sm uppercase tracking-wider text-gray-400">
+            CYCLIC
+          </h4>
+
+          <div className="grid grid-cols-12 items-center gap-3">
+            <label className="col-span-5 text-sm text-gray-300">
+              Number of cyclic
+            </label>
+            <input
+              type="number"
+              className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              min={0}
+              step={1}
+              value={isCyc}
+              onChange={(e) => setCyc(e.target.value)}
+            />
+            <div className="col-span-2 text-right text-xs text-gray-400">
+              cyclic
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-gray-700" />
         {/* Save button */}
         <div className="flex items-center">
           <button
