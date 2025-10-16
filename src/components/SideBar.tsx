@@ -234,7 +234,7 @@ const SideBar = () => {
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="ตั้งชื่อ format (เช่น Regen 60C / Scab 9v)"
+                  placeholder="ตั้งชื่อการทดสอบ"
                   className="col-span-7 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
