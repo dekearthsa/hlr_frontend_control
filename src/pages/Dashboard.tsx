@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from "react";
 import ReactApexChart from "react-apexcharts";
 // import type { ApexOptions } from "apexcharts";
-import axios from "axios";
+// import axios from "axios";
 // import useSWR from "swr";
 
-const HTTP_API = "http://localhost:3011";
+// const HTTP_API = "http://localhost:3011";
 
 // interface typeNewestIAQ {
 //   id: number;

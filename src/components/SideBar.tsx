@@ -272,7 +272,7 @@ const SideBar = () => {
               min={0}
               step={1}
               value={isCyc}
-              onChange={(e) => setCyc(e.target.value)}
+              onChange={(e) => setCyc(Number(e.target.value))}
             />
             <div className="col-span-2 text-right text-xs text-gray-400">
               cyclic
