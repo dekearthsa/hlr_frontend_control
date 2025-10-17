@@ -73,7 +73,7 @@ const Dashboard = () => {
   };
   const [tickSpeed, setTickSpeed] = useState(5000); // 1 วินาทีเริ่มต้น
   const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
-  const [intervalMs, setIntervalMs] = useState(10_000); // 10 sec
+  const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
   const [standby, setStandby] = useState<boolean>(false);
   const [isMode, setIsMode] = useState("idle");
@@ -248,17 +248,17 @@ const Dashboard = () => {
     setNewestIAQ(arrayData);
   };
 
-  const handlerConvertSensor = (sid: string) => {
-    if (sid === "1") {
-      return "Calibrate";
-    } else if (sid === "2") {
-      return "Outlet";
-    } else if (sid === "3") {
-      return "Inlet";
-    } else if (sid === "4") {
-      return "Regen";
-    }
-  };
+  // const handlerConvertSensor = (sid: string) => {
+  //   if (sid === "1") {
+  //     return "Calibrate";
+  //   } else if (sid === "2") {
+  //     return "Outlet";
+  //   } else if (sid === "3") {
+  //     return "Inlet";
+  //   } else if (sid === "4") {
+  //     return "Regen";
+  //   }
+  // };
 
   const commonX = useMemo(
     () => ({
@@ -369,113 +369,135 @@ const Dashboard = () => {
             <div className={`${isMode === ""}`}>Mode: {isMode}</div>
           </div>
           <div className="p-4  text-[12px]">
-            <div className="flex">
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  timeHis === 604800000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTimeHis(604800000);
-                  handlerStartGet();
-                }}
-              >
-                1HRS
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  timeHis === 86400000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTimeHis(86400000);
-                  handlerStartGet();
-                }}
-              >
-                10MIN
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  timeHis === 3600000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTimeHis(3600000);
-                  handlerStartGet();
-                }}
-              >
-                1MIN
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  timeHis === 1800000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTimeHis(1800000);
-                  handlerStartGet();
-                }}
-              >
-                10S
-              </button>
+            <div className="">
+              <div className="mr-10 mb-2">
+                <label>Previous</label>
+              </div>
+              <div className="flex">
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 2592000000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(2592000000);
+                    handlerStartGet();
+                  }}
+                >
+                  1MONTH
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 604800000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(604800000);
+                    handlerStartGet();
+                  }}
+                >
+                  7DAYS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 86400000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(86400000);
+                    handlerStartGet();
+                  }}
+                >
+                  1DAYS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 3600000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(3600000);
+                    handlerStartGet();
+                  }}
+                >
+                  1HOURS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 1800000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(1800000);
+                    handlerStartGet();
+                  }}
+                >
+                  30MIN
+                </button>
+              </div>
             </div>
-            <div className="flex mt-4">
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 60 * 60 * 1000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(60 * 60 * 1000);
-                }}
-              >
-                1HRS
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 10 * 60 * 1000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(10 * 60 * 1000);
-                }}
-              >
-                10MIN
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 60 * 1000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(60 * 1000);
-                }}
-              >
-                1MIN
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 10000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(10000);
-                }}
-              >
-                10S
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 5000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(5000);
-                }}
-              >
-                5S
-              </button>
-              <button
-                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                  tickSpeed === 604800000 ? "bg-gray-600" : ""
-                }`}
-                onClick={() => {
-                  setTickSpeed(1000);
-                }}
-              >
-                1S
-              </button>
+
+            <div className="mt-5">
+              <div className="mr-10 mb-2">
+                <label>Step</label>
+              </div>
+              <div className="flex">
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 60 * 60 * 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(60 * 60 * 1000);
+                  }}
+                >
+                  1HRS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 10 * 60 * 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(10 * 60 * 1000);
+                  }}
+                >
+                  10MIN
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 60 * 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(60 * 1000);
+                  }}
+                >
+                  1MIN
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 10000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(10000);
+                  }}
+                >
+                  10S
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 5000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(5000);
+                  }}
+                >
+                  5S
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    tickSpeed === 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTickSpeed(1000);
+                  }}
+                >
+                  1S
+                </button>
+              </div>
             </div>
           </div>
         </div>
