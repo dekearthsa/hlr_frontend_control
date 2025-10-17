@@ -1,34 +1,153 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import ReactApexChart from "react-apexcharts";
-// import type { ApexOptions } from "apexcharts";
-// import axios from "axios";
-// import useSWR from "swr";
+import useSWR from "swr";
+import axios from "axios";
 
-// const HTTP_API = "http://localhost:3011";
+const HTTP_API = "http://localhost:3011";
 
-// interface typeNewestIAQ {
-//   id: number;
-//   sensor_id: string;
-//   dateTime: number;
-//   co2: number;
-//   humidity: number;
-//   temperature: number;
-//   mode: string;
-// }
+type Row = {
+  id: string;
+  sensor_id: string | number;
+  datetime: number; // ms
+  co2: number;
+  temperature: number;
+  humidity: number;
+};
+
+// --- 1) นาฬิกา 1Hz และหน้าต่างเวลาเลื่อน
+const useNowTicker = (intervalMs: number) => {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]); // 👈 สำคัญ! พอ intervalMs เปลี่ยนจะ restart timer ใหม่
+
+  return nowMs;
+};
+
+// --- 3) เลือก resolution อัตโนมัติ
+// const pickStepMs = (rangeMs: number) => {
+//   if (rangeMs <= 2 * 60 * 60 * 1000) return 1000; // <= 2 ชม. แสดงทุก 1 วิ
+//   if (rangeMs <= 24 * 60 * 60 * 1000) return 5 * 1000; // <= 1 วัน ทุก 5 วิ
+//   if (rangeMs <= 7 * 24 * 60 * 60 * 1000) return 60 * 1000; // <= 7 วัน ทุก 1 นาที
+//   return 5 * 60 * 1000; // มากกว่านั้น ทุก 5 นาที
+// };
+
+// --- 4) สร้างซีรีส์แบบเติม null ตรงว่าง
+function buildSeries(
+  rows: Row[],
+  windowStart: number,
+  windowEnd: number,
+  pickY: (r: Row) => number,
+  sensorLabel: (sid: string) => string
+) {
+  const bySensor = new Map<string, { x: number; y: number }[]>();
+
+  for (const r of rows) {
+    if (r.datetime < windowStart || r.datetime > windowEnd) continue;
+    const sid = String(r.sensor_id);
+    if (!bySensor.has(sid)) bySensor.set(sid, []);
+    bySensor.get(sid)!.push({ x: r.datetime, y: pickY(r) });
+  }
+
+  return Array.from(bySensor.entries()).map(([sid, pts]) => ({
+    name: sensorLabel(sid),
+    data: pts.sort((a, b) => a.x - b.x),
+  }));
+}
 
 const Dashboard = () => {
   // ── Mock data
+  const postFetcher = async ([url, body]: [
+    string,
+    { start: number; latesttime: number }
+  ]) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error((await res.text()) || "POST failed");
+    return res.json();
+  };
+  const [tickSpeed, setTickSpeed] = useState(5000); // 1 วินาทีเริ่มต้น
+  const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
+  const [intervalMs, setIntervalMs] = useState(10_000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
+  const [standby, setStandby] = useState<boolean>(false);
   const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
   const [isSystemRunning, setIsSystemRunning] = useState(false);
+  // const [lastest, setLastest] = useState(0);
+  const latesttimeRef = useRef<number>(0);
+  const nowMs = useNowTicker(tickSpeed);
+  const windowStart = nowMs - timeHis;
+  // const stepMs = pickStepMs(timeHis);
+
+  const { mutate } = useSWR(
+    [
+      `${HTTP_API}/loop/data/iaq`,
+      { start: Date.now() - timeHis, latesttime: latesttimeRef.current || 0 },
+    ],
+    postFetcher,
+    {
+      refreshInterval: intervalMs,
+      onSuccess: (d: Row[]) => {
+        if (standby) return;
+        if (!d?.length) return;
+        latesttimeRef.current = d[d.length - 1].datetime;
+        console.log("data => ", d);
+        setIaq((prev) => {
+          const cutoff = Date.now() - timeHis;
+          const merged = [...prev, ...d];
+          const map = new Map<string, Row>();
+          for (const r of merged) {
+            const key = r.id ?? `${r.sensor_id}-${r.datetime}`;
+            map.set(key, r); // ของใหม่จะทับของเก่าอัตโนมัติ
+          }
+          return Array.from(map.values())
+            .filter((r) => r.datetime >= cutoff)
+            .sort((a, b) => a.datetime - b.datetime);
+        });
+        getLastestIAQData(d);
+      },
+    }
+  );
+
+  const handleExport = async () => {
+    await mutate(); // โพสต์ด้วยคีย์ปัจจุบัน (start/latesttime) แล้วอัปเดต data
+  };
+
+  const labelSensor = (sid: string) =>
+    ({
+      "1": "CO₂ Calibrate",
+      "2": "CO₂ Outlet",
+      "3": "CO₂ Inlet",
+      "4": "CO₂ Regen",
+    }[sid] || `CO₂ Sensor ${sid}`);
+
+  const handlerStartGet = async () => {
+    setStandby(true);
+    const payload = {
+      start: Date.now() - timeHis,
+      latesttime: 0,
+    };
+    const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
+    setIaq(newData.data);
+    setStandby(false);
+  };
+  // ถ้าอยากให้ POST อัตโนมัติเมื่อเปลี่ยนช่วงเวลา (เช่นกด 30M/1H/1D)
+  useEffect(() => {
+    handleExport();
+  }, [timeHis]); // <-- เปลี่ยนช่วงเวลา = ยิง POST หนึ่งครั้ง
 
   const getLastestIAQData = async (data: any) => {
-    // console.log("data =>. ", data);
     const arraySensor1 = [];
     const arraySensor2 = [];
     const arraySensor3 = [];
     const arraySensor4 = [];
+
     for (const el of data) {
       if (el.sensor_id === "1") {
         const payload = {
@@ -125,218 +244,9 @@ const Dashboard = () => {
             temperature: 0,
             mode: "",
           };
-    // console.log("latest1 => ", latest1);
     const arrayData = [latest1, latest2, latest3, latest4];
-    // console.log("arrayData => ", arrayData);
     setNewestIAQ(arrayData);
   };
-
-  const fetchFristTime = async () => {
-    // const ms = Date.now();
-    // const start_ms = 1760498549826;
-    // const payload = {
-    //   start: start_ms,
-    //   lastTimestamp: 0,
-    //   firstTime: true,
-    // };
-    // console.log(payload);
-    // const hlrData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
-    // console.log("hlrData => ", hlrData.data);
-    // setIaq(hlrData.data);
-
-    const debug_data = [
-      {
-        id: 1,
-        datetime: 1760498549826,
-        sensor_id: "2",
-        co2: 450.44,
-        temperature: 21.97,
-        humidity: 49.83,
-        mode: "test",
-      },
-      {
-        id: 2,
-        datetime: 1760498549828,
-        sensor_id: "3",
-        co2: 399.82,
-        temperature: 22.05,
-        humidity: 50.2,
-        mode: "test",
-      },
-      {
-        id: 3,
-        datetime: 1760498549829,
-        sensor_id: "2",
-        co2: 449.79,
-        temperature: 22,
-        humidity: 49.91,
-        mode: "test",
-      },
-      {
-        id: 4,
-        datetime: 1760498549830,
-        sensor_id: "3",
-        co2: 399.64,
-        temperature: 21.96,
-        humidity: 49.99,
-        mode: "test",
-      },
-      {
-        id: 5,
-        datetime: 1760498553948,
-        sensor_id: "2",
-        co2: 450.2,
-        temperature: 22.04,
-        humidity: 50.06,
-        mode: "test",
-      },
-      {
-        id: 6,
-        datetime: 1760498553949,
-        sensor_id: "3",
-        co2: 399.81,
-        temperature: 22.04,
-        humidity: 49.94,
-        mode: "test",
-      },
-      {
-        id: 7,
-        datetime: 1760498553950,
-        sensor_id: "2",
-        co2: 450.51,
-        temperature: 22.03,
-        humidity: 50.2,
-        mode: "test",
-      },
-      {
-        id: 8,
-        datetime: 1760498553951,
-        sensor_id: "3",
-        co2: 399.48,
-        temperature: 22.02,
-        humidity: 49.8,
-        mode: "test",
-      },
-      {
-        id: 9,
-        datetime: 1760498558101,
-        sensor_id: "2",
-        co2: 449.98,
-        temperature: 22.01,
-        humidity: 49.84,
-        mode: "test",
-      },
-      {
-        id: 10,
-        datetime: 1760498558103,
-        sensor_id: "3",
-        co2: 399.64,
-        temperature: 22.02,
-        humidity: 49.96,
-        mode: "test",
-      },
-      {
-        id: 11,
-        datetime: 1760498558104,
-        sensor_id: "2",
-        co2: 450.04,
-        temperature: 22,
-        humidity: 50.09,
-        mode: "test",
-      },
-      {
-        id: 12,
-        datetime: 1760498558106,
-        sensor_id: "3",
-        co2: 399.74,
-        temperature: 21.99,
-        humidity: 50.11,
-        mode: "test",
-      },
-      {
-        id: 13,
-        datetime: 1760498562209,
-        sensor_id: "2",
-        co2: 450.39,
-        temperature: 22.01,
-        humidity: 50.02,
-        mode: "test",
-      },
-      {
-        id: 14,
-        datetime: 1760498562210,
-        sensor_id: "3",
-        co2: 400.11,
-        temperature: 22.04,
-        humidity: 49.84,
-        mode: "test",
-      },
-      {
-        id: 15,
-        datetime: 1760498562211,
-        sensor_id: "2",
-        co2: 450.14,
-        temperature: 22.01,
-        humidity: 49.93,
-        mode: "test",
-      },
-      {
-        id: 16,
-        datetime: 1760498562212,
-        sensor_id: "3",
-        co2: 399.93,
-        temperature: 22.01,
-        humidity: 50.13,
-        mode: "test",
-      },
-      {
-        id: 17,
-        datetime: 1760498566374,
-        sensor_id: "2",
-        co2: 449.95,
-        temperature: 22.04,
-        humidity: 50.02,
-        mode: "test",
-      },
-      {
-        id: 18,
-        datetime: 1760498566376,
-        sensor_id: "3",
-        co2: 400.06,
-        temperature: 22.01,
-        humidity: 50.17,
-        mode: "test",
-      },
-      {
-        id: 19,
-        datetime: 1760498566378,
-        sensor_id: "2",
-        co2: 449.81,
-        temperature: 22,
-        humidity: 49.88,
-        mode: "test",
-      },
-      {
-        id: 20,
-        datetime: 1760498566379,
-        sensor_id: "3",
-        co2: 399.89,
-        temperature: 21.97,
-        humidity: 50.05,
-        mode: "test",
-      },
-    ];
-
-    setIaq(debug_data);
-    // console.log(hlrData.data);
-    setIsMode("idle");
-    setIsSystemRunning(false);
-    getLastestIAQData(debug_data);
-  };
-
-  useEffect(() => {
-    fetchFristTime();
-  }, []);
 
   const handlerConvertSensor = (sid: string) => {
     if (sid === "1") {
@@ -350,65 +260,46 @@ const Dashboard = () => {
     }
   };
 
+  const commonX = useMemo(
+    () => ({
+      type: "datetime",
+      min: windowStart,
+      max: nowMs,
+      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
+      axisBorder: { color: "#334155" },
+      axisTicks: { color: "#334155" },
+      tooltip: { enabled: false },
+    }),
+    [windowStart, nowMs]
+  );
+
+  // --- 5) ซีรีส์ที่ “เลื่อนทุกวินาที” และมีช่องว่างเมื่อไม่มีข้อมูล
   const co2Series = useMemo(() => {
-    // group by sensor_id
-    const bySensor = new Map<string, { x: number; y: number }[]>();
+    return buildSeries(iaq, windowStart, nowMs, (r) => r.co2, labelSensor);
+  }, [iaq, windowStart, nowMs]);
 
-    for (const row of iaq ?? []) {
-      console.log("row => ", row);
-      const sid = String(row.sensor_id);
-      // ถ้า timestamp เดิมเป็น "วินาที" ให้เปลี่ยนเป็น ms: const t = row.datetime * 1000;
-      const t = Number(row.datetime); // สมมติว่าคุณส่งมาเป็น "ms" แล้ว
-      if (!bySensor.has(sid)) bySensor.set(sid, []);
-      bySensor.get(sid)!.push({ x: t, y: row.co2 });
-    }
+  const tempSeries = useMemo(() => {
+    const label = (sid: string) =>
+      ({
+        "1": "Temp Calibrate",
+        "2": "Temp Outlet",
+        "3": "Temp Inlet",
+        "4": "Temp Regen",
+      }[sid] || `Temp ${sid}`);
+    return buildSeries(iaq, windowStart, nowMs, (r) => r.temperature, label);
+  }, [iaq, windowStart, nowMs]);
 
-    // sort ตามเวลาและ map เป็นรูปแบบที่ ApexCharts ต้องการ
-    return Array.from(bySensor.entries()).map(([sid, points]) => ({
-      name: `CO₂ ${handlerConvertSensor(sid)}`,
-      data: points.sort((a, b) => a.x - b.x),
-    }));
-  }, [iaq]);
+  const humidSeries = useMemo(() => {
+    const label = (sid: string) =>
+      ({
+        "1": "Humid Calibrate",
+        "2": "Humid Outlet",
+        "3": "Humid Inlet",
+        "4": "Humid Regen",
+      }[sid] || `Humid ${sid}`);
+    return buildSeries(iaq, windowStart, nowMs, (r) => r.humidity, label);
+  }, [iaq, windowStart, nowMs]);
 
-  const TempSeries = useMemo(() => {
-    // group by sensor_id
-    const bySensor = new Map<string, { x: number; y: number }[]>();
-
-    for (const row of iaq ?? []) {
-      const sid = String(row.sensor_id);
-      // ถ้า timestamp เดิมเป็น "วินาที" ให้เปลี่ยนเป็น ms: const t = row.datetime * 1000;
-      const t = Number(row.datetime); // สมมติว่าคุณส่งมาเป็น "ms" แล้ว
-      if (!bySensor.has(sid)) bySensor.set(sid, []);
-      bySensor.get(sid)!.push({ x: t, y: row.temperature });
-    }
-
-    // sort ตามเวลาและ map เป็นรูปแบบที่ ApexCharts ต้องการ
-    return Array.from(bySensor.entries()).map(([sid, points]) => ({
-      name: `Temperature Sensor ${handlerConvertSensor(sid)}`,
-      data: points.sort((a, b) => a.x - b.x),
-    }));
-  }, [iaq]);
-
-  const HumidSeries = useMemo(() => {
-    // group by sensor_id
-    const bySensor = new Map<string, { x: number; y: number }[]>();
-
-    for (const row of iaq ?? []) {
-      const sid = String(row.sensor_id);
-      // ถ้า timestamp เดิมเป็น "วินาที" ให้เปลี่ยนเป็น ms: const t = row.datetime * 1000;
-      const t = Number(row.datetime); // สมมติว่าคุณส่งมาเป็น "ms" แล้ว
-      if (!bySensor.has(sid)) bySensor.set(sid, []);
-      bySensor.get(sid)!.push({ x: t, y: row.humidity });
-    }
-
-    // sort ตามเวลาและ map เป็นรูปแบบที่ ApexCharts ต้องการ
-    return Array.from(bySensor.entries()).map(([sid, points]) => ({
-      name: `Humidity Sensor ${handlerConvertSensor(sid)}`,
-      data: points.sort((a, b) => a.x - b.x),
-    }));
-  }, [iaq]);
-
-  // ── Chart options (Dark Mode)
   const optionsCo2: any = {
     theme: { mode: "dark" },
     chart: {
@@ -416,21 +307,18 @@ const Dashboard = () => {
       type: "line",
       height: 360,
       background: "transparent",
-      animations: { enabled: true, easing: "easeinout", speed: 500 },
+      animations: { enabled: true, easing: "easeinout", speed: 300 },
       toolbar: { show: true },
       zoom: { enabled: true },
       foreColor: "#cbd5e1",
     },
-    stroke: { curve: "smooth", width: 2 },
-    markers: { size: 0, hover: { size: 5 } },
-    xaxis: {
-      type: "datetime",
-      // ✅ ไม่ต้องใช้ categories
-      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
-      tooltip: { enabled: false },
+    stroke: {
+      curve: "smooth",
+      width: 2 /* , connectNulls: false (ถ้ามีในเวอร์ชันคุณ ให้ปิด) */,
+      connectNulls: true,
     },
+    markers: { size: 0, hover: { size: 4 } },
+    xaxis: commonX,
     yaxis: {
       title: { text: "CO₂ (ppm)", style: { color: "#cbd5e1" } },
       decimalsInFloat: 0,
@@ -439,136 +327,159 @@ const Dashboard = () => {
       axisBorder: { color: "#334155" },
       axisTicks: { color: "#334155" },
     },
-    legend: {
-      show: true,
-      position: "top",
-      horizontalAlign: "left",
-      markers: { width: 10, height: 10, radius: 12 },
-      onItemClick: { toggleDataSeries: true },
-      labels: { colors: "#cbd5e1" },
-    },
     tooltip: {
       theme: "dark",
-      shared: true, // hover รวมหลายเส้น
-      x: { format: "HH:mm" },
-      y: { formatter: (val: any) => `${val?.toFixed?.(0)} ppm` },
+      shared: true,
+      x: { format: "HH:mm:ss" },
+      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} ppm`) },
     },
     grid: { borderColor: "#334155" },
-    colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
   };
 
-  const optionsTemp: any = {
-    theme: { mode: "dark" },
-    chart: {
-      id: "temp-line",
-      type: "line",
-      height: 360,
-      background: "transparent",
-      animations: { enabled: true, easing: "easeinout", speed: 500 },
-      toolbar: { show: true },
-      zoom: { enabled: true },
-      foreColor: "#cbd5e1",
-    },
-    stroke: { curve: "smooth", width: 2 },
-    markers: { size: 0, hover: { size: 5 } },
-    xaxis: {
-      type: "datetime",
-      // ✅ ไม่ต้องใช้ categories
-      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
-      tooltip: { enabled: false },
-    },
+  const optionsTemp = {
+    ...optionsCo2,
     yaxis: {
-      title: { text: "Temp (C)", style: { color: "#cbd5e1" } },
-      decimalsInFloat: 0,
-      min: 0,
-      labels: { style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
+      ...optionsCo2.yaxis,
+      title: { text: "Temp (°C)", style: { color: "#cbd5e1" } },
     },
-    legend: {
-      show: true,
-      position: "top",
-      horizontalAlign: "left",
-      markers: { width: 10, height: 10, radius: 12 },
-      onItemClick: { toggleDataSeries: true },
-      labels: { colors: "#cbd5e1" },
-    },
-    tooltip: {
-      theme: "dark",
-      shared: true, // hover รวมหลายเส้น
-      x: { format: "HH:mm" },
-      y: { formatter: (val: any) => `${val?.toFixed?.(0)} C` },
-    },
-    grid: { borderColor: "#334155" },
-    colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
   };
-
-  const optionsHumid: any = {
-    theme: { mode: "dark" },
-    chart: {
-      id: "humid-line",
-      type: "line",
-      height: 360,
-      background: "transparent",
-      animations: { enabled: true, easing: "easeinout", speed: 500 },
-      toolbar: { show: true },
-      zoom: { enabled: true },
-      foreColor: "#cbd5e1",
-    },
-    stroke: { curve: "smooth", width: 2 },
-    markers: { size: 0, hover: { size: 5 } },
-    xaxis: {
-      type: "datetime",
-      // ✅ ไม่ต้องใช้ categories
-      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
-      tooltip: { enabled: false },
-    },
+  const optionsHumid = {
+    ...optionsCo2,
     yaxis: {
+      ...optionsCo2.yaxis,
       title: { text: "Humid (%RH)", style: { color: "#cbd5e1" } },
-      decimalsInFloat: 0,
-      min: 0,
-      labels: { style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
     },
-    legend: {
-      show: true,
-      position: "top",
-      horizontalAlign: "left",
-      markers: { width: 10, height: 10, radius: 12 },
-      onItemClick: { toggleDataSeries: true },
-      labels: { colors: "#cbd5e1" },
-    },
-    tooltip: {
-      theme: "dark",
-      shared: true, // hover รวมหลายเส้น
-      x: { format: "HH:mm" },
-      y: { formatter: (val: any) => `${val?.toFixed?.(0)} %RH` },
-    },
-    grid: { borderColor: "#334155" },
-    colors: ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#f87171"],
   };
 
   return (
     <div className="ml-[4%] min-h-screen  flex justify-center  bg-gray-950 text-gray-100">
       <div className="w-[85%] mt-10 border-[1px] border-gray-500 p-3 mb-10 rounded-lg">
-        <div className="p-4">
-          <div>
-            System:
-            <span
-              className={`ml-2 ${
-                isSystemRunning === false ? "text-red-500" : "text-green-500"
-              }`}
-            >
-              {isSystemRunning ? "Running" : "Offline"}
-            </span>
+        <div className="flex justify-between">
+          <div className="p-4">
+            <div>
+              System:
+              <span
+                className={`ml-2 ${
+                  isSystemRunning === false ? "text-red-500" : "text-green-500"
+                }`}
+              >
+                {isSystemRunning ? "Running" : "Offline"}
+              </span>
+            </div>
+            <div className={`${isMode === ""}`}>Mode: {isMode}</div>
           </div>
-          <div className={`${isMode === ""}`}>Mode: {isMode}</div>
+          <div className="p-4  text-[12px]">
+            <div className="flex">
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  timeHis === 604800000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTimeHis(604800000);
+                  handlerStartGet();
+                }}
+              >
+                1HRS
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  timeHis === 86400000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTimeHis(86400000);
+                  handlerStartGet();
+                }}
+              >
+                10MIN
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  timeHis === 3600000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTimeHis(3600000);
+                  handlerStartGet();
+                }}
+              >
+                1MIN
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  timeHis === 1800000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTimeHis(1800000);
+                  handlerStartGet();
+                }}
+              >
+                10S
+              </button>
+            </div>
+            <div className="flex mt-4">
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 60 * 60 * 1000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(60 * 60 * 1000);
+                }}
+              >
+                1HRS
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 10 * 60 * 1000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(10 * 60 * 1000);
+                }}
+              >
+                10MIN
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 60 * 1000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(60 * 1000);
+                }}
+              >
+                1MIN
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 10000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(10000);
+                }}
+              >
+                10S
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 5000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(5000);
+                }}
+              >
+                5S
+              </button>
+              <button
+                className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                  tickSpeed === 604800000 ? "bg-gray-600" : ""
+                }`}
+                onClick={() => {
+                  setTickSpeed(1000);
+                }}
+              >
+                1S
+              </button>
+            </div>
+          </div>
         </div>
+
         <div className="">
           <div className="ml-5 mr-5 border-[1px] border-gray-500 rounded-md h-[100%]  p-3 pb-8">
             {isNewestIAQ?.map((el: any, index: number) => {
@@ -630,7 +541,7 @@ const Dashboard = () => {
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
             <ReactApexChart
               options={optionsTemp}
-              series={TempSeries}
+              series={tempSeries}
               type="line"
               height={360}
             />
@@ -644,7 +555,7 @@ const Dashboard = () => {
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
             <ReactApexChart
               options={optionsHumid}
-              series={HumidSeries}
+              series={humidSeries}
               type="line"
               height={360}
             />

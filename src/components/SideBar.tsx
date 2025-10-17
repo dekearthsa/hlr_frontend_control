@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
 
 type RegenSettings = {
   fanVolt: number; // volt
@@ -126,7 +127,13 @@ const SideBar = () => {
 
   const handleStart = () => {
     setRunning("running");
-    console.log("START ▶️", { regen, scab });
+    const comm = {
+      regen: regen,
+      scab: scab,
+      cool: isCoolDown,
+      idel: isIdle,
+    };
+    console.log("START ▶️", comm);
   };
   const handleStop = () => {
     setRunning("idle");
@@ -223,7 +230,7 @@ const SideBar = () => {
       </div>
       {menuPage === "auto" ? (
         <div className=" overflow-y-auto">
-          {/* Panel input */}
+          {/* Panel input abcDEF99 */}
           <div className=" px-6 pb-36 space-y-6 flex-1 mt-4">
             {/* Title */}
             <section className="space-y-4 mt-1">
