@@ -20,9 +20,11 @@ type SavedFormat = {
   cool: ScabSettings;
   idle: { durationMin: number };
   savedAt: number;
+  cyclic_loop: number;
 };
 
 const STORAGE_KEY = "panel-formats";
+const HTTP_API = "http://localhost:3011";
 
 const SideBar = () => {
   // helpers
@@ -79,11 +81,11 @@ const SideBar = () => {
   const [manualFanOn, setManualFanOn] = useState<boolean>(false);
   const [manualHeaterOn, setManualHeaterOn] = useState<boolean>(false);
   const [manualFanVolt, setManualFanVolt] = useState<number>(0); // float (0-10)
-  const [manualHeaterTemp, setManualHeaterTemp] = useState<number>(0); // float (>=0)
+  // const [manualHeaterTemp, setManualHeaterTemp] = useState<number>(0); // float (>=0)
 
   const [title, setTitle] = useState("");
   const [menuPage, setMenuPage] = useState("auto");
-  const [isCyc, setCyc] = useState(0);
+  const [isCyc, setCyc] = useState(1);
   const [regen, setRegen] = useState<RegenSettings>({
     fanVolt: 0,
     heaterTemp: 0,
@@ -104,18 +106,49 @@ const SideBar = () => {
     durationMin: 5,
   });
   const [running, setRunning] = useState<string>("idle");
+  const [isOperateIn, setOperateIn] = useState("idle");
 
   // formats
   const [formats, setFormats] = useState<SavedFormat[]>([]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null); // popover for each card
 
+  const handleManaulStart = async () => {
+    const payload = {
+      fanVolt: manualFanVolt,
+      fanOn: manualFanOn,
+      heaterOn: manualHeaterOn,
+    };
+
+    const { data } = await axios.post(`${HTTP_API}/manual`, payload);
+    if (data.status === 200) {
+      alert("System start...");
+      setOperateIn("manual");
+    } else {
+      alert(data.status);
+      setOperateIn("idle");
+    }
+  };
+
+  const handleManaulStop = async () => {
+    const result = await axios.get(`${HTTP_API}/manual/stop`);
+    if (result.status === 200) {
+      alert("System stop");
+      setOperateIn("idle");
+    } else {
+      alert(result.status);
+    }
+  };
+
   // load formats from localStorage
+  const handleGetFormat = async () => {
+    const { data } = await axios.get(`${HTTP_API}/push/format`);
+    console.log("handleGetFormat => ", data);
+    if (data) setFormats(data);
+  };
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setFormats(JSON.parse(raw));
-    } catch {}
+    handleGetFormat();
   }, []);
 
   const persist = (next: SavedFormat[]) => {
@@ -125,22 +158,40 @@ const SideBar = () => {
     } catch {}
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setRunning("running");
+    // const comm = {
+    //   regen: regen,
+    //   scab: scab,
+    //   cool: isCoolDown,
+    //   idel: isIdle,
+    // };
     const comm = {
-      regen: regen,
-      scab: scab,
-      cool: isCoolDown,
-      idel: isIdle,
+      cyclicName: title,
+      systemType: "auto",
+      regenFan: regen.fanVolt,
+      regenHeater: regen.heaterTemp,
+      regenDur: regen.durationMin,
+      scabFan: scab.fanVolt,
+      scabDur: scab.durationMin,
+      coolFan: isCoolDown.fanVolt,
+      coolDur: isCoolDown.durationMin,
+      idelDur: isIdle.durationMin,
+      cyclicLoop: isCyc,
     };
+
     console.log("START ▶️", comm);
+    await axios.post(`${HTTP_API}/start`, comm);
+    setOperateIn("auto");
   };
-  const handleStop = () => {
+  const handleStop = async () => {
     setRunning("idle");
     console.log("STOP ⏹️");
+    await axios.get(`${HTTP_API}/stop`);
+    setOperateIn("idle");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const cleanTitle = title.trim() || `Format ${new Date().toLocaleString()}`;
     const d = new Date();
     const fmt: SavedFormat = {
@@ -153,22 +204,40 @@ const SideBar = () => {
       savedAt: `${d.getDate()}/${
         d.getMonth() + 1
       }/${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}` as unknown as number,
+      cyclic_loop: isCyc,
     };
-    console.log("fmt => ", fmt);
+    // console.log("fmt => ", fmt);
+    const payload = {
+      cyclicName: title,
+      regenFan: regen.fanVolt,
+      regenHeater: regen.heaterTemp,
+      regenDur: regen.durationMin,
+      scabFan: scab.fanVolt,
+      scabDur: scab.durationMin,
+      coolFan: isCoolDown.fanVolt,
+      coolDur: isCoolDown.durationMin,
+      idelDur: isIdle.durationMin,
+      cyclicLoop: isCyc,
+    };
+
+    await axios.post(`${HTTP_API}/save/format`, payload);
     const next = [fmt, ...formats];
     persist(next);
-    setTitle(""); // clear title after save
+    // setTitle(""); // clear title after save
   };
 
   const handleUse = (fmt: SavedFormat) => {
     setRegen(fmt.regen);
     setScab(fmt.scab);
     setActiveMenuId(null);
+    setTitle(fmt.title);
+    setCyc(fmt.cyclic_loop);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string, title: string) => {
     const next = formats.filter((f) => f.id !== id);
     persist(next);
+    await axios.post(`${HTTP_API}/remove/format`, { cyclicName: title });
     if (activeMenuId === id) setActiveMenuId(null);
   };
 
@@ -471,7 +540,7 @@ const SideBar = () => {
                 <input
                   type="number"
                   className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min={0}
+                  min={1}
                   step={1}
                   value={isCyc}
                   onChange={(e) => setCyc(Number(e.target.value))}
@@ -571,6 +640,10 @@ const SideBar = () => {
                           {f.scab.fanVolt}v / {f.scab.durationMin}m
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">cyclic loop</span>
+                        <span>{f.cyclic_loop} loop</span>
+                      </div>
                     </div>
 
                     {/* popover menu */}
@@ -588,7 +661,7 @@ const SideBar = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(f.id);
+                            handleDelete(f.id, f.title);
                           }}
                           className="block px-3 py-2 text-sm text-rose-400 hover:bg-gray-800 rounded-b-lg w-full text-left"
                         >
@@ -699,7 +772,7 @@ const SideBar = () => {
                   <label className="col-span-5 text-sm text-gray-300">
                     Heater temp
                   </label>
-                  <input
+                  {/* <input
                     type="number"
                     className="col-span-4 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     min={0}
@@ -715,7 +788,7 @@ const SideBar = () => {
                   />
                   <div className="col-span-1 text-right text-xs text-gray-400">
                     °C
-                  </div>
+                  </div> */}
 
                   {/* Toggle */}
                   <div className="col-span-2 flex justify-end">
@@ -744,7 +817,6 @@ const SideBar = () => {
                 Manual:
                 <span className="ml-2">
                   Fan {manualFanOn ? `${manualFanVolt}v` : "OFF"} | Heater{" "}
-                  {manualHeaterOn ? `${manualHeaterTemp}°C` : "OFF"}
                 </span>
               </div>
               <div className="border-t border-gray-800 bg-gray-900/80 backdrop-blur-sm pt-5">
@@ -766,11 +838,11 @@ const SideBar = () => {
                     <button
                       onClick={() => {
                         setRunning("running");
+                        handleManaulStart();
                         console.log("MANUAL START ▶️", {
                           fanOn: manualFanOn,
                           fanVolt: manualFanVolt,
                           heaterOn: manualHeaterOn,
-                          heaterTemp: manualHeaterTemp,
                         });
                       }}
                       disabled={running === "running"}
@@ -781,6 +853,7 @@ const SideBar = () => {
                     <button
                       onClick={() => {
                         setRunning("idle");
+                        handleManaulStop();
                         console.log("MANUAL STOP ⏹️");
                       }}
                       disabled={running === "idle"}

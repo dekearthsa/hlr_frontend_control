@@ -26,14 +26,6 @@ const useNowTicker = (intervalMs: number) => {
   return nowMs;
 };
 
-// --- 3) เลือก resolution อัตโนมัติ
-// const pickStepMs = (rangeMs: number) => {
-//   if (rangeMs <= 2 * 60 * 60 * 1000) return 1000; // <= 2 ชม. แสดงทุก 1 วิ
-//   if (rangeMs <= 24 * 60 * 60 * 1000) return 5 * 1000; // <= 1 วัน ทุก 5 วิ
-//   if (rangeMs <= 7 * 24 * 60 * 60 * 1000) return 60 * 1000; // <= 7 วัน ทุก 1 นาที
-//   return 5 * 60 * 1000; // มากกว่านั้น ทุก 5 นาที
-// };
-
 // --- 4) สร้างซีรีส์แบบเติม null ตรงว่าง
 function buildSeries(
   rows: Row[],
@@ -57,6 +49,8 @@ function buildSeries(
   }));
 }
 
+const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
+
 const Dashboard = () => {
   // ── Mock data
   const postFetcher = async ([url, body]: [
@@ -75,7 +69,11 @@ const Dashboard = () => {
   const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
   const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
-  const [standby, setStandby] = useState<boolean>(false);
+  const [statusSystem, setStatusSystem] = useState<{
+    mode: string;
+    system: string;
+  }>({ mode: "", system: "" });
+  // const [standby, setStandby] = useState<boolean>(false);
   const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
   const [isSystemRunning, setIsSystemRunning] = useState(false);
@@ -84,6 +82,12 @@ const Dashboard = () => {
   const nowMs = useNowTicker(tickSpeed);
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
+  const statusHLR = useSWR(`${HTTP_API}/get/status`, fetcher, {
+    refreshInterval: 1000,
+    onSuccess: (d: any) => {
+      console.log("d => ", d);
+    },
+  });
 
   const { mutate } = useSWR(
     [
@@ -94,10 +98,10 @@ const Dashboard = () => {
     {
       refreshInterval: intervalMs,
       onSuccess: (d: Row[]) => {
-        if (standby) return;
+        // if (standby) return;
         if (!d?.length) return;
         latesttimeRef.current = d[d.length - 1].datetime;
-        console.log("data => ", d);
+        // console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
@@ -127,15 +131,16 @@ const Dashboard = () => {
       "4": "CO₂ Regen",
     }[sid] || `CO₂ Sensor ${sid}`);
 
-  const handlerStartGet = async () => {
-    setStandby(true);
+  const handlerStartGet = async (ms: number) => {
+    // setStandby(true);
     const payload = {
-      start: Date.now() - timeHis,
+      start: Date.now() - ms,
       latesttime: 0,
     };
     const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
+    console.log(newData);
     setIaq(newData.data);
-    setStandby(false);
+    // setStandby(false);
   };
   // ถ้าอยากให้ POST อัตโนมัติเมื่อเปลี่ยนช่วงเวลา (เช่นกด 30M/1H/1D)
   useEffect(() => {
@@ -380,7 +385,7 @@ const Dashboard = () => {
                   }`}
                   onClick={() => {
                     setTimeHis(2592000000);
-                    handlerStartGet();
+                    handlerStartGet(2592000000);
                   }}
                 >
                   1MONTH
@@ -391,21 +396,43 @@ const Dashboard = () => {
                   }`}
                   onClick={() => {
                     setTimeHis(604800000);
-                    handlerStartGet();
+                    handlerStartGet(604800000);
                   }}
                 >
                   7DAYS
                 </button>
                 <button
                   className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    timeHis === 86400000 ? "bg-gray-600" : ""
+                    timeHis === 24 * 60 * 60 * 1000 ? "bg-gray-600" : ""
                   }`}
                   onClick={() => {
-                    setTimeHis(86400000);
-                    handlerStartGet();
+                    setTimeHis(24 * 60 * 60 * 1000);
+                    handlerStartGet(24 * 60 * 60 * 1000);
                   }}
                 >
                   1DAYS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 12 * 60 * 60 * 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(12 * 60 * 60 * 1000);
+                    handlerStartGet(12 * 60 * 60 * 1000);
+                  }}
+                >
+                  12HOURS
+                </button>
+                <button
+                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
+                    timeHis === 4 * 60 * 60 * 1000 ? "bg-gray-600" : ""
+                  }`}
+                  onClick={() => {
+                    setTimeHis(4 * 60 * 60 * 1000);
+                    handlerStartGet(4 * 60 * 60 * 1000);
+                  }}
+                >
+                  4HOURS
                 </button>
                 <button
                   className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
@@ -413,7 +440,7 @@ const Dashboard = () => {
                   }`}
                   onClick={() => {
                     setTimeHis(3600000);
-                    handlerStartGet();
+                    handlerStartGet(3600000);
                   }}
                 >
                   1HOURS
@@ -424,7 +451,7 @@ const Dashboard = () => {
                   }`}
                   onClick={() => {
                     setTimeHis(1800000);
-                    handlerStartGet();
+                    handlerStartGet(1800000);
                   }}
                 >
                   30MIN
