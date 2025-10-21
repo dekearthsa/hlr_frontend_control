@@ -24,6 +24,7 @@ type SavedFormat = {
 };
 
 const STORAGE_KEY = "panel-formats";
+// const HTTP_API = "http://172.29.247.185:3011";
 const HTTP_API = "http://localhost:3011";
 
 const SideBar = () => {
@@ -229,7 +230,7 @@ const SideBar = () => {
   const handleUse = (fmt: SavedFormat) => {
     setRegen(fmt.regen);
     setScab(fmt.scab);
-    setCoolDown(fmt.cool)
+    setCoolDown(fmt.cool);
     setActiveMenuId(null);
     setTitle(fmt.title);
     setCyc(fmt.cyclic_loop);
