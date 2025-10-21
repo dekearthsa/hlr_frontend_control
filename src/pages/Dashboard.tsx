@@ -82,10 +82,15 @@ const Dashboard = () => {
   const nowMs = useNowTicker(tickSpeed);
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
-  const statusHLR = useSWR(`${HTTP_API}/get/status`, fetcher, {
+  useSWR(`${HTTP_API}/get/status`, fetcher, {
     refreshInterval: 1000,
     onSuccess: (d: any) => {
-      console.log("d => ", d);
+      // console.log("d => ", d[0]);
+      const stateP = {
+        system: d[0].systemType,
+        mode: d[0].systemState,
+      };
+      setStatusSystem(stateP);
     },
   });
 
@@ -362,16 +367,16 @@ const Dashboard = () => {
         <div className="flex justify-between">
           <div className="p-4">
             <div>
-              System:
-              <span
+              System: {statusSystem.system ? statusSystem.system : "Offline"}
+              {/* <span
                 className={`ml-2 ${
                   isSystemRunning === false ? "text-red-500" : "text-green-500"
                 }`}
               >
                 {isSystemRunning ? "Running" : "Offline"}
-              </span>
+              </span> */}
             </div>
-            <div className={`${isMode === ""}`}>Mode: {isMode}</div>
+            <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">
