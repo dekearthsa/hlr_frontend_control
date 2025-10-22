@@ -412,7 +412,7 @@ const Dashboard = () => {
               </span> */}
             </div>
             <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
-            <div>Count down {countDownTime} min</div>
+            <div>Count down {(countDownTime).toFixed(0)} min</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">
