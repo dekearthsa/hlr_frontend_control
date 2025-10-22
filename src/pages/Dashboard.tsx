@@ -102,13 +102,14 @@ const Dashboard = () => {
   useSWR(`${HTTP_API}/get/status`, fetcher, {
     refreshInterval: 1000,
     onSuccess: (d: any) => {
-      // console.log("d => ", d[0]);
+      console.log("d => ", d[0]);
       const modeOut = handleMode(d[0].systemState);
 
       const stateP = {
         system: modeOut ? modeOut : "Error can't find state.",
         mode: d[0].systemState,
       };
+      console.log("stateP => ", stateP);
       const ms = Date.now();
       const endTime = d[0].endtime;
       const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
