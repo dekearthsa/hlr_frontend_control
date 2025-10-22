@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import useSWR from "swr";
 
 type RegenSettings = {
   fanVolt: number; // volt
@@ -25,6 +26,7 @@ type SavedFormat = {
 
 const STORAGE_KEY = "panel-formats";
 const HTTP_API = "http://172.29.247.140:3011";
+const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
 // const HTTP_API = "http://192.168.1.39:3011";
 
 const SideBar = () => {
@@ -130,6 +132,18 @@ const SideBar = () => {
       setOperateIn("idle");
     }
   };
+
+  useSWR(`${HTTP_API}/get/status`, fetcher, {
+    refreshInterval: 1000,
+    onSuccess: (d: any) => {
+      // console.log("d => ", d[0]);
+      if (d[0].systemState !== "end") {
+        setRunning("running");
+      } else {
+        setRunning("idle");
+      }
+    },
+  });
 
   const handleManaulStop = async () => {
     const result = await axios.get(`${HTTP_API}/manual/stop`);

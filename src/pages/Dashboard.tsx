@@ -14,6 +14,8 @@ type Row = {
   humidity: number;
 };
 
+// const stateList: string[] = ["regen", "cooldown", "idle", "scrub"];
+
 // --- 1) นาฬิกา 1Hz และหน้าต่างเวลาเลื่อน abcDEF99
 const useNowTicker = (intervalMs: number) => {
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -73,24 +75,45 @@ const Dashboard = () => {
     mode: string;
     system: string;
   }>({ mode: "", system: "" });
+  const [countDownTime, setCountDownTime] = useState<number>(0);
   // const [standby, setStandby] = useState<boolean>(false);
   const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
-  const [isSystemRunning, setIsSystemRunning] = useState(false);
+  // const [isSystemRunning, setIsSystemRunning] = useState(false);
   // const [lastest, setLastest] = useState(0);
   const latesttimeRef = useRef<number>(0);
   const nowMs = useNowTicker(tickSpeed);
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
+
+  const handleMode = (setType: string) => {
+    if (setType === "end") {
+      return "end";
+    } else if (setType === "cooldown") {
+      return "regen";
+    } else if (setType === "idle") {
+      return "cooldown";
+    } else if (setType === "scrub") {
+      return "idle";
+    } else if (setType === "regen") {
+      return "scrub";
+    }
+  };
   useSWR(`${HTTP_API}/get/status`, fetcher, {
     refreshInterval: 1000,
     onSuccess: (d: any) => {
       // console.log("d => ", d[0]);
+      const modeOut = handleMode(d[0].systemState);
+
       const stateP = {
-        system: d[0].systemType,
+        system: modeOut ? modeOut : "Error can't find state.",
         mode: d[0].systemState,
       };
+      const ms = Date.now();
+      const endTime = d[0].endtime;
+      const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
       setStatusSystem(stateP);
+      setCountDownTime(downTime);
     },
   });
 
@@ -377,6 +400,7 @@ const Dashboard = () => {
               </span> */}
             </div>
             <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
+            <div>Count down {countDownTime}</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">
