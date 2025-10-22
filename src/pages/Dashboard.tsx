@@ -3,7 +3,7 @@ import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
 
-const HTTP_API = "http://172.29.247.185:3011";
+const HTTP_API = "http://172.29.247.140:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
