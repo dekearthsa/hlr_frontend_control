@@ -100,7 +100,7 @@ const Dashboard = () => {
     }
   };
   useSWR(`${HTTP_API}/get/status`, fetcher, {
-    refreshInterval: 1000,
+    refreshInterval: 5000,
     onSuccess: (d: any) => {
       console.log("d => ", d[0]);
       const modeOut = handleMode(d[0].systemState);
@@ -130,7 +130,7 @@ const Dashboard = () => {
         // if (standby) return;
         if (!d?.length) return;
         latesttimeRef.current = d[d.length - 1].datetime;
-        console.log("data => ", d);
+        // console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
@@ -390,7 +390,7 @@ const Dashboard = () => {
               </span> */}
             </div>
             <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
-            <div>Count down {countDownTime}</div>
+            <div>Count down {countDownTime} min</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">
