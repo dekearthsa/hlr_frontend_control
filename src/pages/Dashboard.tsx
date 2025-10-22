@@ -129,7 +129,7 @@ const Dashboard = () => {
         // if (standby) return;
         if (!d?.length) return;
         latesttimeRef.current = d[d.length - 1].datetime;
-        // console.log("data => ", d);
+        console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
@@ -281,18 +281,6 @@ const Dashboard = () => {
     setNewestIAQ(arrayData);
   };
 
-  // const handlerConvertSensor = (sid: string) => {
-  //   if (sid === "1") {
-  //     return "Calibrate";
-  //   } else if (sid === "2") {
-  //     return "Outlet";
-  //   } else if (sid === "3") {
-  //     return "Inlet";
-  //   } else if (sid === "4") {
-  //     return "Regen";
-  //   }
-  // };
-
   const commonX = useMemo(
     () => ({
       type: "datetime",
@@ -318,6 +306,7 @@ const Dashboard = () => {
         "2": "Temp Outlet",
         "3": "Temp Inlet",
         "4": "Temp Regen",
+        "51": "Temp TK",
       }[sid] || `Temp ${sid}`);
     return buildSeries(iaq, windowStart, nowMs, (r) => r.temperature, label);
   }, [iaq, windowStart, nowMs]);
@@ -613,7 +602,7 @@ const Dashboard = () => {
         </div>
         <div>
           <div className="p-4 text-[20px] font-semibold text-gray-100">
-            Humidity (%RH)
+            Temperature (Celsius)
           </div>
           {/* Chart Card */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
@@ -627,7 +616,7 @@ const Dashboard = () => {
         </div>
         <div>
           <div className="p-4 text-[20px] font-semibold text-gray-100">
-            Temperature (Celsius)
+            Humidity (%RH)
           </div>
           {/* Chart Card */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
