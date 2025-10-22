@@ -143,7 +143,7 @@ const Dashboard = () => {
       latesttime: 0,
     };
     const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
-    console.log(newData);
+    // console.log(newData);
     setIaq(newData.data);
     // setStandby(false);
   };
