@@ -235,6 +235,7 @@ const SideBar = () => {
     setActiveMenuId(null);
     setTitle(fmt.title);
     setCyc(fmt.cyclic_loop);
+    setIdle(fmt.idle);
   };
 
   const handleDelete = async (id: string, title: string) => {

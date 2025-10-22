@@ -9,11 +9,11 @@ export default defineConfig({
     strictPort: true,
     cors: true,
     // กันกรณี HMR งอแงเวลาเข้าผ่าน IP
-    hmr: {
-      host: '192.168.1.39',   // ใส่ IP ของ Pi
-      clientPort: 5173,
-      protocol: 'ws'
-    },
+    // hmr: {
+    //   host: '192.168.1.39',   // ใส่ IP ของ Pi
+    //   clientPort: 5173,
+    //   protocol: 'ws'
+    // },
     // ถ้า Vite เวอร์ชันใหม่มี allowedHosts ให้เปิดด้วย:
     // allowedHosts: ['192.168.1.39']
   },
