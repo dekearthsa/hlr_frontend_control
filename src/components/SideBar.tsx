@@ -188,7 +188,8 @@ const SideBar = () => {
   const handleStop = async () => {
     setRunning("idle");
     console.log("STOP ⏹️");
-    await axios.get(`${HTTP_API}/stop`);
+    await axios.get(`${HTTP_API}/manual/stop`);
+    // await axios.get(`${HTTP_API}/stop`);
     setOperateIn("idle");
   };
 
