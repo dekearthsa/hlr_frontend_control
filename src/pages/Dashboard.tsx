@@ -105,13 +105,14 @@ const Dashboard = () => {
     const modeOut = handleMode(data[0].systemState);
 
     const stateP = {
-      system: modeOut ? modeOut : "Error can't find state.",
-      mode: data[0].systemState,
+      system: data[0].systemType,
+      mode: modeOut ? modeOut : "Error can't find state.",
     };
     // console.log("stateP => ", stateP);
     const ms = Date.now();
     const endTime = data[0].endtime;
-    const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
+    const downTime: number =
+      endTime - ms <= 0 ? 0 : (endTime - ms) / (60 * 1000);
     setStatusSystem(stateP);
     setCountDownTime(downTime);
   };
