@@ -99,28 +99,44 @@ const Dashboard = () => {
       return "scrub";
     }
   };
-  useSWR(`${HTTP_API}/get/status`, fetcher, {
-    refreshInterval: 5000,
-    dedupingInterval: 2000,
-    onSuccess: (d: any) => {
-      console.log("d => ", d[0]);
-      const modeOut = handleMode(d[0].systemState);
 
-      const stateP = {
-        system: modeOut ? modeOut : "Error can't find state.",
-        mode: d[0].systemState,
-      };
-      console.log("stateP => ", stateP);
-      const ms = Date.now();
-      const endTime = d[0].endtime;
-      const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
-      setStatusSystem(stateP);
-      setCountDownTime(downTime);
-    },
-    onError: (err) => {
-      console.error("[/get/status] fetch error:", err);
-    },
-  });
+  const handleGetStatus = async () => {
+    const { data } = await axios.get(`${HTTP_API}/get/status`);
+    const modeOut = handleMode(data[0].systemState);
+
+    const stateP = {
+      system: modeOut ? modeOut : "Error can't find state.",
+      mode: data[0].systemState,
+    };
+    console.log("stateP => ", stateP);
+    const ms = Date.now();
+    const endTime = data[0].endtime;
+    const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
+    setStatusSystem(stateP);
+    setCountDownTime(downTime);
+  };
+  // useSWR(`${HTTP_API}/get/status`, fetcher, {
+  //   refreshInterval: 5000,
+  //   dedupingInterval: 2000,
+  //   onSuccess: (d: any) => {
+  //     console.log("d => ", d[0]);
+  //     const modeOut = handleMode(d[0].systemState);
+
+  //     const stateP = {
+  //       system: modeOut ? modeOut : "Error can't find state.",
+  //       mode: d[0].systemState,
+  //     };
+  //     console.log("stateP => ", stateP);
+  //     const ms = Date.now();
+  //     const endTime = d[0].endtime;
+  //     const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
+  //     setStatusSystem(stateP);
+  //     setCountDownTime(downTime);
+  //   },
+  //   onError: (err) => {
+  //     console.error("[/get/status] fetch error:", err);
+  //   },
+  // });
 
   const { mutate } = useSWR(
     [
@@ -143,6 +159,7 @@ const Dashboard = () => {
             const key = r.id ?? `${r.sensor_id}-${r.datetime}`;
             map.set(key, r); // ของใหม่จะทับของเก่าอัตโนมัติ
           }
+          handleGetStatus();
           return Array.from(map.values())
             .filter((r) => r.datetime >= cutoff)
             .sort((a, b) => a.datetime - b.datetime);
