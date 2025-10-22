@@ -101,6 +101,7 @@ const Dashboard = () => {
   };
   useSWR(`${HTTP_API}/get/status`, fetcher, {
     refreshInterval: 5000,
+    dedupingInterval: 2000,
     onSuccess: (d: any) => {
       console.log("d => ", d[0]);
       const modeOut = handleMode(d[0].systemState);
@@ -115,6 +116,9 @@ const Dashboard = () => {
       const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
       setStatusSystem(stateP);
       setCountDownTime(downTime);
+    },
+    onError: (err) => {
+      console.error("[/get/status] fetch error:", err);
     },
   });
 
