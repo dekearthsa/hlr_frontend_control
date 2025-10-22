@@ -108,7 +108,7 @@ const Dashboard = () => {
       system: modeOut ? modeOut : "Error can't find state.",
       mode: data[0].systemState,
     };
-    console.log("stateP => ", stateP);
+    // console.log("stateP => ", stateP);
     const ms = Date.now();
     const endTime = data[0].endtime;
     const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
