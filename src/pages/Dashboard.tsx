@@ -319,6 +319,7 @@ const Dashboard = () => {
         "2": "Humid Outlet",
         "3": "Humid Inlet",
         "4": "Humid Regen",
+        "51": "Humid TK",
       }[sid] || `Humid ${sid}`);
     return buildSeries(iaq, windowStart, nowMs, (r) => r.humidity, label);
   }, [iaq, windowStart, nowMs]);
@@ -365,12 +366,24 @@ const Dashboard = () => {
       ...optionsCo2.yaxis,
       title: { text: "Temp (°C)", style: { color: "#cbd5e1" } },
     },
+    tooltip: {
+      theme: "dark",
+      shared: true,
+      x: { format: "HH:mm:ss" },
+      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} °C`) },
+    },
   };
   const optionsHumid = {
     ...optionsCo2,
     yaxis: {
       ...optionsCo2.yaxis,
       title: { text: "Humid (%RH)", style: { color: "#cbd5e1" } },
+    },
+    tooltip: {
+      theme: "dark",
+      shared: true,
+      x: { format: "HH:mm:ss" },
+      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} %RH`) },
     },
   };
 
