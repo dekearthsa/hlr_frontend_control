@@ -116,28 +116,6 @@ const Dashboard = () => {
     setStatusSystem(stateP);
     setCountDownTime(downTime);
   };
-  // useSWR(`${HTTP_API}/get/status`, fetcher, {
-  //   refreshInterval: 5000,
-  //   dedupingInterval: 2000,
-  //   onSuccess: (d: any) => {
-  //     console.log("d => ", d[0]);
-  //     const modeOut = handleMode(d[0].systemState);
-
-  //     const stateP = {
-  //       system: modeOut ? modeOut : "Error can't find state.",
-  //       mode: d[0].systemState,
-  //     };
-  //     console.log("stateP => ", stateP);
-  //     const ms = Date.now();
-  //     const endTime = d[0].endtime;
-  //     const downTime: number = endTime - ms <= 0 ? 0 : (endTime - ms) / 1000;
-  //     setStatusSystem(stateP);
-  //     setCountDownTime(downTime);
-  //   },
-  //   onError: (err) => {
-  //     console.error("[/get/status] fetch error:", err);
-  //   },
-  // });
 
   const { mutate } = useSWR(
     [
@@ -412,7 +390,7 @@ const Dashboard = () => {
               </span> */}
             </div>
             <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
-            <div>Count down {(countDownTime).toFixed(0)} min</div>
+            <div>Count down {countDownTime.toFixed(0)} min</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">

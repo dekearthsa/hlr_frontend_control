@@ -76,8 +76,39 @@ const SideBar = () => {
     endMs >= startMs && !Number.isNaN(startMs) && !Number.isNaN(endMs);
 
   // ให้คุณไป implement เอง
-  const exportCSV = (startMs: number, endMs: number) => {
-    console.log("exportCSV ->", { startMs, endMs });
+  const exportCSV = async (startMs: number, endMs: number) => {
+    console.log(startMs, endMs);
+    const payload = {
+      startMs: startMs,
+      endMs: endMs,
+    };
+    // //  debug payload
+    // const payload = {
+    //   startMs: 1761024022933,
+    //   endMs: 1761024342093,
+    // };
+    const res = await axios.post(
+      "http://localhost:3011/download/csv", // URL API
+      payload,
+      {
+        responseType: "blob", // 👈 สำคัญมาก ต้องเป็น blob เพื่อรับไฟล์
+      }
+    );
+
+    // --- สร้าง Blob object และดาวน์โหลดไฟล์ ---
+    const blob = new Blob([res.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sensor_data.csv"; // 👈 ชื่อไฟล์ที่จะโหลด
+    document.body.appendChild(link);
+    link.click();
+
+    // ล้างลิงก์ชั่วคราวออก
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    // console.log("exportCSV ->", { startMs, endMs });
     // TODO: ทำเองตามต้องการ
   };
 
@@ -335,7 +366,6 @@ const SideBar = () => {
             </section>
 
             <hr className="border-gray-700" />
-
             {/* Regen mode */}
             <section className="space-y-4">
               <h3 className="text-sm uppercase tracking-wider text-gray-400">
