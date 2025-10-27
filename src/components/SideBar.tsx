@@ -75,7 +75,6 @@ const SideBar = () => {
   const timeValid =
     endMs >= startMs && !Number.isNaN(startMs) && !Number.isNaN(endMs);
 
-  // ให้คุณไป implement เอง
   const exportCSV = async (startMs: number, endMs: number) => {
     console.log(startMs, endMs);
     const payload = {
@@ -88,28 +87,25 @@ const SideBar = () => {
     //   endMs: 1761024342093,
     // };
     const res = await axios.post(
-      "http://localhost:3011/download/csv", // URL API
+      `${HTTP_API}/download/csv`, // URL API
       payload,
       {
-        responseType: "blob", // 👈 สำคัญมาก ต้องเป็น blob เพื่อรับไฟล์
+        responseType: "blob",
       }
     );
 
-    // --- สร้าง Blob object และดาวน์โหลดไฟล์ ---
     const blob = new Blob([res.data], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = "sensor_data.csv"; // 👈 ชื่อไฟล์ที่จะโหลด
+    link.download = "sensor_data.csv";
     document.body.appendChild(link);
     link.click();
 
-    // ล้างลิงก์ชั่วคราวออก
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
     // console.log("exportCSV ->", { startMs, endMs });
-    // TODO: ทำเองตามต้องการ
   };
 
   const [manualFanOn, setManualFanOn] = useState<boolean>(false);
