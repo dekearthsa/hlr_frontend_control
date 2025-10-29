@@ -25,7 +25,7 @@ type SavedFormat = {
 };
 
 const STORAGE_KEY = "panel-formats";
-const HTTP_API = "http://172.29.247.140:3011";
+const HTTP_API = "http://172.29.246.80:3011";
 const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
 // const HTTP_API = "http://192.168.1.39:3011";
 
@@ -182,7 +182,7 @@ const SideBar = () => {
   useSWR(`${HTTP_API}/get/status`, fetcher, {
     refreshInterval: 1000,
     onSuccess: (d: any) => {
-      // console.log("d => ", d[0]);
+      console.log("d => ", d[0]);
       if (d[0].systemState !== "end") {
         setRunning("running");
       } else {
