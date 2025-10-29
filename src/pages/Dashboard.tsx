@@ -3,7 +3,8 @@ import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
 
-const HTTP_API = "http://172.29.246.80:3011";
+const HTTP_API = "https://195079fa06e7.ngrok-free.app";
+// const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
@@ -13,6 +14,15 @@ type Row = {
   temperature: number;
   humidity: number;
 };
+
+const myApi = axios.create({
+  baseURL: HTTP_API,
+  headers: {
+    "ngrok-skip-browser-warning": "true",
+    Accept: "application/json",
+  },
+  timeout: 8000,
+});
 
 // const stateList: string[] = ["regen", "cooldown", "idle", "scrub"];
 
@@ -51,7 +61,7 @@ function buildSeries(
   }));
 }
 
-const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
+// const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
 
 const Dashboard = () => {
   // ── Mock data
@@ -69,7 +79,7 @@ const Dashboard = () => {
   };
   const [tickSpeed, setTickSpeed] = useState(5000); // 1 วินาทีเริ่มต้น
   const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
-  const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
+  // const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
   const [statusSystem, setStatusSystem] = useState<{
     mode: string;
@@ -77,7 +87,7 @@ const Dashboard = () => {
   }>({ mode: "", system: "" });
   const [countDownTime, setCountDownTime] = useState<number>(0);
   // const [standby, setStandby] = useState<boolean>(false);
-  const [isMode, setIsMode] = useState("idle");
+  // const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
   // const [isSystemRunning, setIsSystemRunning] = useState(false);
   // const [lastest, setLastest] = useState(0);
@@ -101,9 +111,9 @@ const Dashboard = () => {
   };
 
   const handleGetStatus = async () => {
-    const { data } = await axios.get(`${HTTP_API}/get/status`);
+    const { data } = await myApi.get(`/get/status`);
     const modeOut = handleMode(data[0].systemState);
-
+    // console.log(data);
     const stateP = {
       system: data[0].systemType,
       mode: modeOut ? modeOut : "Error can't find state.",
@@ -124,7 +134,7 @@ const Dashboard = () => {
     ],
     postFetcher,
     {
-      refreshInterval: intervalMs,
+      refreshInterval: 10000,
       onSuccess: (d: Row[]) => {
         // if (standby) return;
         if (!d?.length) return;
@@ -402,7 +412,7 @@ const Dashboard = () => {
                 {isSystemRunning ? "Running" : "Offline"}
               </span> */}
             </div>
-            <div className={`${isMode === ""}`}>Mode: {statusSystem.mode}</div>
+            <div>Mode: {statusSystem.mode}</div>
             <div>Count down {countDownTime.toFixed(0)} min</div>
           </div>
           <div className="p-4  text-[12px]">

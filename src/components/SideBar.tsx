@@ -25,9 +25,19 @@ type SavedFormat = {
 };
 
 const STORAGE_KEY = "panel-formats";
-const HTTP_API = "http://172.29.246.80:3011";
+const HTTP_API = "https://195079fa06e7.ngrok-free.app";
+// const HTTP_API = "http://172.29.246.80:3011";
 const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
 // const HTTP_API = "http://192.168.1.39:3011";
+
+const myApi = axios.create({
+  baseURL: HTTP_API,
+  headers: {
+    "ngrok-skip-browser-warning": "true",
+    Accept: "application/json",
+  },
+  timeout: 8000,
+});
 
 const SideBar = () => {
   // helpers
@@ -86,8 +96,8 @@ const SideBar = () => {
     //   startMs: 1761024022933,
     //   endMs: 1761024342093,
     // };
-    const res = await axios.post(
-      `${HTTP_API}/download/csv`, // URL API
+    const res = await myApi.post(
+      `/download/csv`, // URL API
       payload,
       {
         responseType: "blob",
@@ -106,8 +116,8 @@ const SideBar = () => {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    const res2 = await axios.post(
-      `${HTTP_API}/download/iaq/csv`, // URL API
+    const res2 = await myApi.post(
+      `/download/iaq/csv`, // URL API
       payload,
       {
         responseType: "blob",
@@ -169,7 +179,7 @@ const SideBar = () => {
       heaterOn: manualHeaterOn,
     };
 
-    const { data } = await axios.post(`${HTTP_API}/manual`, payload);
+    const { data } = await myApi.post(`/manual`, payload);
     if (data.status === 200) {
       alert("System start...");
       setOperateIn("manual");
@@ -192,7 +202,7 @@ const SideBar = () => {
   });
 
   const handleManaulStop = async () => {
-    const result = await axios.get(`${HTTP_API}/manual/stop`);
+    const result = await myApi.get(`/manual/stop`);
     if (result.status === 200) {
       alert("System stop");
       setOperateIn("idle");
@@ -203,8 +213,8 @@ const SideBar = () => {
 
   // load formats from localStorage
   const handleGetFormat = async () => {
-    const { data } = await axios.get(`${HTTP_API}/push/format`);
-    console.log("handleGetFormat => ", data);
+    const { data } = await myApi.get(`/push/format`);
+    // console.log("handleGetFormat => ", data);
     if (data) setFormats(data);
   };
 
@@ -242,15 +252,16 @@ const SideBar = () => {
     };
 
     console.log("START ▶️", comm);
-    await axios.post(`${HTTP_API}/start`, comm);
+    await myApi.post(`/start`, comm);
     setOperateIn("auto");
   };
   const handleStop = async () => {
     setRunning("idle");
     console.log("STOP ⏹️");
-    await axios.get(`${HTTP_API}/manual/stop`);
+    await myApi.get(`/manual/stop`);
     // await axios.get(`${HTTP_API}/stop`);
     setOperateIn("idle");
+    console.log(isOperateIn);
   };
 
   const handleSave = async () => {
@@ -282,7 +293,7 @@ const SideBar = () => {
       cyclicLoop: isCyc,
     };
 
-    await axios.post(`${HTTP_API}/save/format`, payload);
+    await myApi.post(`/save/format`, payload);
     const next = [fmt, ...formats];
     persist(next);
     // setTitle(""); // clear title after save
@@ -301,7 +312,7 @@ const SideBar = () => {
   const handleDelete = async (id: string, title: string) => {
     const next = formats.filter((f) => f.id !== id);
     persist(next);
-    await axios.post(`${HTTP_API}/remove/format`, { cyclicName: title });
+    await myApi.post(`/remove/format`, { cyclicName: title });
     if (activeMenuId === id) setActiveMenuId(null);
   };
 
