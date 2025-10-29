@@ -705,7 +705,7 @@ const SideBar = () => {
 
                       <div className="flex justify-between">
                         <span className="text-gray-400">Idle</span>
-                        <span>{f.regen.durationMin}m</span>
+                        <span>{f.idle.durationMin}m</span>
                       </div>
 
                       <div className="flex justify-between">
