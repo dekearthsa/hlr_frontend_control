@@ -105,7 +105,26 @@ const SideBar = () => {
 
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    // console.log("exportCSV ->", { startMs, endMs });
+
+    const res2 = await axios.post(
+      `${HTTP_API}/download/iaq/csv`, // URL API
+      payload,
+      {
+        responseType: "blob",
+      }
+    );
+
+    const blob2 = new Blob([res2.data], { type: "text/csv" });
+    const url2 = window.URL.createObjectURL(blob2);
+
+    const link2 = document.createElement("a");
+    link2.href = url2;
+    link2.download = "sensor_data.csv";
+    document.body.appendChild(link2);
+    link2.click();
+
+    document.body.removeChild(link2);
+    window.URL.revokeObjectURL(url2);
   };
 
   const [manualFanOn, setManualFanOn] = useState<boolean>(false);
