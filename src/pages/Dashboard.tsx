@@ -3,8 +3,8 @@ import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
 
-const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
-// const HTTP_API = "http://172.29.246.80:3011";
+// const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
+const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
@@ -86,6 +86,7 @@ const Dashboard = () => {
     system: string;
   }>({ mode: "", system: "" });
   const [countDownTime, setCountDownTime] = useState<number>(0);
+  const [nameLabel, setNameLabel] = useState("");
   // const [standby, setStandby] = useState<boolean>(false);
   // const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
@@ -112,6 +113,7 @@ const Dashboard = () => {
 
   const handleGetStatus = async () => {
     const { data } = await myApi.get(`/get/status`);
+    console.log("data => ", data);
     const modeOut = handleMode(data[0].systemState);
     // console.log(data);
     const stateP = {
@@ -125,6 +127,7 @@ const Dashboard = () => {
       endTime - ms <= 0 ? 0 : (endTime - ms) / (60 * 1000);
     setStatusSystem(stateP);
     setCountDownTime(downTime);
+    setNameLabel(data[0].cyclicName);
   };
 
   const { mutate } = useSWR(
@@ -402,6 +405,7 @@ const Dashboard = () => {
       <div className="w-[85%] mt-10 border-[1px] border-gray-500 p-3 mb-10 rounded-lg">
         <div className="flex justify-between">
           <div className="p-4">
+            <div>{nameLabel}</div>
             <div>
               System: {statusSystem.system ? statusSystem.system : "Offline"}
               {/* <span
@@ -591,17 +595,24 @@ const Dashboard = () => {
                     <div className="grid grid-cols-3 mt-3">
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto ">
                         <div>CO₂ (ppm)</div>
-                        <div className="mt-10 text-[23px]">{el.co2}</div>
+                        <div className="mt-10 text-[23px]">
+                          {el.co2.toFixed(2) ? el.co2.toFixed(2) : ""}
+                        </div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Temperature (C)</div>
                         <div className="mt-10 text-[23px]">
-                          {el.temperature}
+                          {el.temperature.toFixed(2)
+                            ? el.temperature.toFixed(2)
+                            : ""}
                         </div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Humidity (%RH)</div>
-                        <div className="mt-10 text-[23px]">{el.humidity} %</div>
+                        <div className="mt-10 text-[23px]">
+                          {el.humidity.toFixed(2) ? el.humidity.toFixed(2) : ""}{" "}
+                          %
+                        </div>
                       </div>
                     </div>
                   </div>
