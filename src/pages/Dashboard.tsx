@@ -3,7 +3,7 @@ import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
 
-const HTTP_API = "https://195079fa06e7.ngrok-free.app";
+const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
 // const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
@@ -591,21 +591,17 @@ const Dashboard = () => {
                     <div className="grid grid-cols-3 mt-3">
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto ">
                         <div>CO₂ (ppm)</div>
-                        <div className="mt-10 text-[23px]">
-                          {el.co2.toFixed(2)}
-                        </div>
+                        <div className="mt-10 text-[23px]">{el.co2}</div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Temperature (C)</div>
                         <div className="mt-10 text-[23px]">
-                          {el.temperature.toFixed(2)}
+                          {el.temperature}
                         </div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Humidity (%RH)</div>
-                        <div className="mt-10 text-[23px]">
-                          {el.humidity.toFixed(2)} %
-                        </div>
+                        <div className="mt-10 text-[23px]">{el.humidity} %</div>
                       </div>
                     </div>
                   </div>
