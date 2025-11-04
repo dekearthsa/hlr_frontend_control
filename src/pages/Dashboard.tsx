@@ -3,8 +3,8 @@ import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
 
-const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
-// const HTTP_API = "http://172.29.246.80:3011";
+// const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
+const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
@@ -87,6 +87,7 @@ const Dashboard = () => {
   }>({ mode: "", system: "" });
   const [countDownTime, setCountDownTime] = useState<number>(0);
   const [nameLabel, setNameLabel] = useState("");
+  const [loopCount, setLoopCount] = useState(0);
   // const [standby, setStandby] = useState<boolean>(false);
   // const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
@@ -128,6 +129,7 @@ const Dashboard = () => {
     setStatusSystem(stateP);
     setCountDownTime(downTime);
     setNameLabel(data[0].cyclicName);
+    setLoopCount(data[0].cyclic_loop_dur);
   };
 
   const { mutate } = useSWR(
@@ -418,6 +420,7 @@ const Dashboard = () => {
             </div>
             <div>Mode: {statusSystem.mode}</div>
             <div>Count down {countDownTime.toFixed(0)} min</div>
+            <div>Loop count {loopCount ? loopCount : "null"}</div>
           </div>
           <div className="p-4  text-[12px]">
             <div className="">
