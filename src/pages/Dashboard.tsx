@@ -78,7 +78,7 @@ const Dashboard = () => {
     if (!res.ok) throw new Error((await res.text()) || "POST failed");
     return res.json();
   };
-  const [tickSpeed, setTickSpeed] = useState(10000); // 1 วินาทีเริ่มต้น
+  // const [tickSpeed, setTickSpeed] = useState(10000); // 1 วินาทีเริ่มต้น
   const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
   // const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
@@ -95,7 +95,7 @@ const Dashboard = () => {
   // const [isSystemRunning, setIsSystemRunning] = useState(false);
   // const [lastest, setLastest] = useState(0);
   const latesttimeRef = useRef<number>(0);
-  const nowMs = useNowTicker(tickSpeed);
+  const nowMs = useNowTicker(10000); // tickSpeed
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
 
