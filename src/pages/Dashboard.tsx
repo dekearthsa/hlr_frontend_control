@@ -10,7 +10,7 @@ const HTTP_API = "http://172.29.246.80:3011";
 type Row = {
   id: string;
   sensor_id: string | number;
-  datetime: number; // ms
+  timestamp: number; // ms
   co2: number;
   temperature: number;
   humidity: number;
@@ -50,10 +50,10 @@ function buildSeries(
   const bySensor = new Map<string, { x: number; y: number }[]>();
 
   for (const r of rows) {
-    if (r.datetime < windowStart || r.datetime > windowEnd) continue;
+    if (r.timestamp < windowStart || r.timestamp > windowEnd) continue;
     const sid = String(r.sensor_id);
     if (!bySensor.has(sid)) bySensor.set(sid, []);
-    bySensor.get(sid)!.push({ x: r.datetime, y: pickY(r) });
+    bySensor.get(sid)!.push({ x: r.timestamp, y: pickY(r) });
   }
 
   return Array.from(bySensor.entries()).map(([sid, pts]) => ({
@@ -148,20 +148,20 @@ const Dashboard = () => {
       onSuccess: (d: Row[]) => {
         // if (standby) return;
         if (!d?.length) return;
-        latesttimeRef.current = d[d.length - 1].datetime;
+        latesttimeRef.current = d[d.length - 1].timestamp;
         // console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
           const map = new Map<string, Row>();
           for (const r of merged) {
-            const key = r.id ?? `${r.sensor_id}-${r.datetime}`;
+            const key = r.id ?? `${r.sensor_id}-${r.timestamp}`;
             map.set(key, r); // ของใหม่จะทับของเก่าอัตโนมัติ
           }
           handleGetStatus();
           return Array.from(map.values())
-            .filter((r) => r.datetime >= cutoff)
-            .sort((a, b) => a.datetime - b.datetime);
+            .filter((r) => r.timestamp >= cutoff)
+            .sort((a, b) => a.timestamp - b.timestamp);
         });
         getLastestIAQData(d);
       },
@@ -188,7 +188,7 @@ const Dashboard = () => {
       rangeSelected: ms,
     };
     const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
-    // console.log("newData => ", newData.data);
+    console.log("newData => ", newData.data);
     // const dataAvg = averagePerMinute(newData.data, ms);
     // console.log("dataAvg => ", dataAvg);
     setIaq(newData.data);
@@ -211,7 +211,7 @@ const Dashboard = () => {
           id: el.id,
           label: "Calibrate",
           sensor_id: el.sensor_id,
-          datetime: el.datetime,
+          timestamp: el.timestamp,
           co2: el.co2,
           temperature: el.temperature,
           humidity: el.humidity,
@@ -222,7 +222,7 @@ const Dashboard = () => {
           id: el.id,
           label: "Outlet",
           sensor_id: el.sensor_id,
-          datetime: el.datetime,
+          timestamp: el.timestamp,
           co2: el.co2,
           temperature: el.temperature,
           humidity: el.humidity,
@@ -233,7 +233,7 @@ const Dashboard = () => {
           id: el.id,
           label: "Inlet",
           sensor_id: el.sensor_id,
-          datetime: el.datetime,
+          timestamp: el.timestamp,
           co2: el.co2,
           temperature: el.temperature,
           humidity: el.humidity,
@@ -244,7 +244,7 @@ const Dashboard = () => {
           id: el.id,
           label: "Regen",
           sensor_id: el.sensor_id,
-          datetime: el.datetime,
+          timestamp: el.timestamp,
           co2: el.co2,
           temperature: el.temperature,
           humidity: el.humidity,
@@ -259,7 +259,7 @@ const Dashboard = () => {
         : {
             id: "-",
             sensor_id: 0,
-            dateTime: 0,
+            timestamp: 0,
             co2: 0,
             humidity: 0,
             temperature: 0,
@@ -271,7 +271,7 @@ const Dashboard = () => {
         : {
             id: "-",
             sensor_id: 0,
-            dateTime: 0,
+            timestamp: 0,
             co2: 0,
             humidity: 0,
             temperature: 0,
@@ -283,7 +283,7 @@ const Dashboard = () => {
         : {
             id: "-",
             sensor_id: 0,
-            dateTime: 0,
+            timestamp: 0,
             co2: 0,
             humidity: 0,
             temperature: 0,
@@ -295,7 +295,7 @@ const Dashboard = () => {
         : {
             id: "-",
             sensor_id: 0,
-            dateTime: 0,
+            timestamp: 0,
             co2: 0,
             humidity: 0,
             temperature: 0,
@@ -307,10 +307,10 @@ const Dashboard = () => {
 
   const commonX = useMemo(
     () => ({
-      type: "datetime",
+      type: "timestamp",
       min: windowStart,
       max: nowMs,
-      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
+      labels: { timestampUTC: false, style: { colors: "#94a3b8" } },
       axisBorder: { color: "#334155" },
       axisTicks: { color: "#334155" },
       tooltip: { enabled: false },
@@ -595,12 +595,12 @@ const Dashboard = () => {
                     <div className="mt-5 mb-5 ml-3">
                       <span className="border-b-[1px]">Sensor: {el.label}</span>
                       <span className="text-[13px] text-gray-600 ml-5">
-                        Update {new Date(el.datetime).getDate()}/
-                        {new Date(el.datetime).getMonth() + 1}/
-                        {new Date(el.datetime).getFullYear()}{" "}
-                        {new Date(el.datetime).getHours()}:
-                        {new Date(el.datetime).getMinutes()}:
-                        {new Date(el.datetime).getSeconds()}
+                        Update {new Date(el.timestamp).getDate()}/
+                        {new Date(el.timestamp).getMonth() + 1}/
+                        {new Date(el.timestamp).getFullYear()}{" "}
+                        {new Date(el.timestamp).getHours()}:
+                        {new Date(el.timestamp).getMinutes()}:
+                        {new Date(el.timestamp).getSeconds()}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 mt-3">
