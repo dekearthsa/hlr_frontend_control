@@ -2,9 +2,10 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import ReactApexChart from "react-apexcharts";
 import useSWR from "swr";
 import axios from "axios";
+// import { averagePerMinute } from "../helper/helper";
 
-const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
-// const HTTP_API = "http://172.29.246.80:3011";
+// const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
+const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
@@ -77,7 +78,7 @@ const Dashboard = () => {
     if (!res.ok) throw new Error((await res.text()) || "POST failed");
     return res.json();
   };
-  const [tickSpeed, setTickSpeed] = useState(5000); // 1 วินาทีเริ่มต้น
+  const [tickSpeed, setTickSpeed] = useState(10000); // 1 วินาทีเริ่มต้น
   const [timeHis, setTimeHis] = useState(1800000); // default start 30 mins
   // const [intervalMs, setIntervalMs] = useState(10000); // 10 sec
   const [isNewestIAQ, setNewestIAQ] = useState<any[]>();
@@ -114,7 +115,7 @@ const Dashboard = () => {
 
   const handleGetStatus = async () => {
     const { data } = await myApi.get(`/get/status`);
-    console.log("data => ", data);
+    // console.log("data => ", data);
     const modeOut = handleMode(data[0].systemState);
     // console.log(data);
     const stateP = {
@@ -135,7 +136,11 @@ const Dashboard = () => {
   const { mutate } = useSWR(
     [
       `${HTTP_API}/loop/data/iaq`,
-      { start: Date.now() - timeHis, latesttime: latesttimeRef.current || 0 },
+      {
+        start: Date.now() - timeHis,
+        latesttime: latesttimeRef.current || 0,
+        rangeSelected: 0,
+      },
     ],
     postFetcher,
     {
@@ -180,9 +185,12 @@ const Dashboard = () => {
     const payload = {
       start: Date.now() - ms,
       latesttime: 0,
+      rangeSelected: ms,
     };
     const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
-    // console.log(newData);
+    // console.log("newData => ", newData.data);
+    // const dataAvg = averagePerMinute(newData.data, ms);
+    // console.log("dataAvg => ", dataAvg);
     setIaq(newData.data);
     // setStandby(false);
   };
@@ -428,7 +436,7 @@ const Dashboard = () => {
                 <label>Previous</label>
               </div>
               <div className="flex">
-                <button
+                {/* <button
                   className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
                     timeHis === 2592000000 ? "bg-gray-600" : ""
                   }`}
@@ -438,7 +446,7 @@ const Dashboard = () => {
                   }}
                 >
                   1MONTH
-                </button>
+                </button> */}
                 <button
                   className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
                     timeHis === 604800000 ? "bg-gray-600" : ""
@@ -508,7 +516,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="mt-5">
+            {/* <div className="mt-5">
               <div className="mr-10 mb-2">
                 <label>Step</label>
               </div>
@@ -574,7 +582,7 @@ const Dashboard = () => {
                   1S
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
