@@ -4,8 +4,8 @@ import useSWR from "swr";
 import axios from "axios";
 // import { averagePerMinute } from "../helper/helper";
 
-const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
-// const HTTP_API = "http://172.29.246.80:3011";
+// const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
+const HTTP_API = "http://172.29.246.80:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 type Row = {
   id: string;
@@ -144,12 +144,12 @@ const Dashboard = () => {
     ],
     postFetcher,
     {
-      refreshInterval: 10000,
+      refreshInterval: 60000,
       onSuccess: (d: Row[]) => {
         // if (standby) return;
         if (!d?.length) return;
         latesttimeRef.current = d[d.length - 1].timestamp;
-        // console.log("data => ", d);
+        console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
