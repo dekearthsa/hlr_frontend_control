@@ -9,14 +9,11 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/hlr_frontend_control
 
-# ตัวแปรแวดล้อมที่มักมีประโยชน์บน Raspberry Pi
 Environment="NODE_ENV=development"
 Environment="HOST=0.0.0.0"
 Environment="PORT=5173"
-# ถ้าไฟล์ระบบไม่แจ้ง change events ดีบน Pi ให้เปิด polling (จำเป็นกับบางโปรเจกต์)
 Environment="CHOKIDAR_USEPOLLING=true"
 
-# รัน dev server ด้วย npm ที่ระบุ
 ExecStart=/usr/bin/npm run dev -- --host=0.0.0.0 --port=5173
 
 # ทนทานต่อการหลุด

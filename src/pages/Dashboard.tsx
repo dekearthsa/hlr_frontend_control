@@ -1,5 +1,8 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import ReactApexChart from "react-apexcharts";
+import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+// import ExportingModule from "highcharts/modules/exporting";
+// import ExportDataModule from "highcharts/modules/export-data";
 import useSWR from "swr";
 import axios from "axios";
 // import { averagePerMinute } from "../helper/helper";
@@ -8,6 +11,13 @@ import axios from "axios";
 // const HTTP_API = "http://172.29.246.80:3011";
 const HTTP_API = "https://api1.bkkcodedevearthregisterdemobkk.work";
 // const HTTP_API = "http://192.168.1.39:3011";
+
+// (ExportingModule as unknown as (H: typeof Highcharts) => typeof Highcharts)(
+//   Highcharts
+// );
+// (ExportDataModule as unknown as (H: typeof Highcharts) => typeof Highcharts)(
+//   Highcharts
+// );
 
 type Row = {
   id: string;
@@ -58,10 +68,69 @@ function buildSeries(
     bySensor.get(sid)!.push({ x: r.timestamp, y: pickY(r) });
   }
 
-  return Array.from(bySensor.entries()).map(([sid, pts]) => ({
-    name: sensorLabel(sid),
-    data: pts.sort((a, b) => a.x - b.x),
-  }));
+  return Array.from(bySensor.entries()).map<Highcharts.SeriesSplineOptions>(
+    ([sid, pts]) => ({
+      type: "spline",
+      name: sensorLabel(sid),
+      data: pts.sort((a, b) => a.x - b.x).map((pt) => ({ x: pt.x, y: pt.y })),
+      connectNulls: true,
+    })
+  );
+}
+
+function buildChartOptions(
+  series: Highcharts.SeriesSplineOptions[],
+  yAxisTitle: string,
+  unitLabel: string,
+  windowStart: number,
+  windowEnd: number
+): Highcharts.Options {
+  return {
+    chart: {
+      type: "spline",
+      height: 360,
+      backgroundColor: "transparent",
+      style: { fontFamily: "Inter, 'Noto Sans Thai', sans-serif" },
+    },
+    title: { text: undefined },
+    legend: {
+      itemStyle: { color: "#cbd5e1" },
+    },
+    xAxis: {
+      type: "datetime",
+      min: windowStart,
+      max: windowEnd,
+      crosshair: { color: "rgba(148,163,184,0.35)" },
+      labels: { style: { color: "#94a3b8" } },
+      lineColor: "#334155",
+      tickColor: "#334155",
+    },
+    yAxis: {
+      title: { text: yAxisTitle, style: { color: "#cbd5e1" } },
+      labels: { style: { color: "#94a3b8" } },
+      min: 0,
+      gridLineColor: "#334155",
+    },
+    tooltip: {
+      shared: true,
+      backgroundColor: "#020617",
+      borderColor: "#1f2933",
+      style: { color: "#e5e7eb" },
+      xDateFormat: "%H:%M:%S",
+      valueSuffix: ` ${unitLabel}`,
+      valueDecimals: 2,
+    },
+    plotOptions: {
+      series: {
+        marker: { enabled: false },
+        lineWidth: 2,
+        connectNulls: true,
+      },
+    },
+    series,
+    credits: { enabled: false },
+    exporting: { enabled: true },
+  };
 }
 
 // const fetcher = async (url: string) => axios.get(url).then((res) => res.data);
@@ -307,19 +376,6 @@ const Dashboard = () => {
     setNewestIAQ(arrayData);
   };
 
-  const commonX = useMemo(
-    () => ({
-      type: "datetime",
-      min: windowStart,
-      max: nowMs,
-      labels: { datetimeUTC: false, style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
-      tooltip: { enabled: false },
-    }),
-    [windowStart, nowMs]
-  );
-
   // --- 5) ซีรีส์ที่ “เลื่อนทุกวินาที” และมีช่องว่างเมื่อไม่มีข้อมูล
   const co2Series = useMemo(() => {
     return buildSeries(iaq, windowStart, nowMs, (r) => r.co2, labelSensor);
@@ -349,68 +405,21 @@ const Dashboard = () => {
     return buildSeries(iaq, windowStart, nowMs, (r) => r.humidity, label);
   }, [iaq, windowStart, nowMs]);
 
-  const optionsCo2: any = {
-    theme: { mode: "dark" },
-    chart: {
-      id: "co2-line",
-      type: "line",
-      height: 360,
-      background: "transparent",
-      animations: { enabled: true, easing: "easeinout", speed: 300 },
-      toolbar: { show: true },
-      zoom: { enabled: true },
-      foreColor: "#cbd5e1",
-    },
-    stroke: {
-      curve: "smooth",
-      width: 2 /* , connectNulls: false (ถ้ามีในเวอร์ชันคุณ ให้ปิด) */,
-      connectNulls: true,
-    },
-    markers: { size: 0, hover: { size: 4 } },
-    xaxis: commonX,
-    yaxis: {
-      title: { text: "CO₂ (ppm)", style: { color: "#cbd5e1" } },
-      decimalsInFloat: 0,
-      min: 0,
-      labels: { style: { colors: "#94a3b8" } },
-      axisBorder: { color: "#334155" },
-      axisTicks: { color: "#334155" },
-    },
-    tooltip: {
-      theme: "dark",
-      shared: true,
-      x: { format: "HH:mm:ss" },
-      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} ppm`) },
-    },
-    grid: { borderColor: "#334155" },
-  };
+  const optionsCo2 = useMemo<Highcharts.Options>(
+    () => buildChartOptions(co2Series, "CO₂ (ppm)", "ppm", windowStart, nowMs),
+    [co2Series, windowStart, nowMs]
+  );
 
-  const optionsTemp = {
-    ...optionsCo2,
-    yaxis: {
-      ...optionsCo2.yaxis,
-      title: { text: "Temp (°C)", style: { color: "#cbd5e1" } },
-    },
-    tooltip: {
-      theme: "dark",
-      shared: true,
-      x: { format: "HH:mm:ss" },
-      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} °C`) },
-    },
-  };
-  const optionsHumid = {
-    ...optionsCo2,
-    yaxis: {
-      ...optionsCo2.yaxis,
-      title: { text: "Humid (%RH)", style: { color: "#cbd5e1" } },
-    },
-    tooltip: {
-      theme: "dark",
-      shared: true,
-      x: { format: "HH:mm:ss" },
-      y: { formatter: (v: any) => (v == null ? "-" : `${v.toFixed?.(0)} %RH`) },
-    },
-  };
+  const optionsTemp = useMemo<Highcharts.Options>(
+    () => buildChartOptions(tempSeries, "Temp (°C)", "°C", windowStart, nowMs),
+    [tempSeries, windowStart, nowMs]
+  );
+
+  const optionsHumid = useMemo<Highcharts.Options>(
+    () =>
+      buildChartOptions(humidSeries, "Humid (%RH)", "%RH", windowStart, nowMs),
+    [humidSeries, windowStart, nowMs]
+  );
 
   return (
     <div className="ml-[4%] min-h-screen  flex justify-center  bg-gray-950 text-gray-100">
@@ -639,12 +648,7 @@ const Dashboard = () => {
           {/* Chart Card */}
           <div className="px-4 pb-8">
             <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
-              <ReactApexChart
-                options={optionsCo2}
-                series={co2Series}
-                type="line"
-                height={360}
-              />
+              <HighchartsReact highcharts={Highcharts} options={optionsCo2} />
             </div>
           </div>
         </div>
@@ -654,12 +658,7 @@ const Dashboard = () => {
           </div>
           {/* Chart Card */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
-            <ReactApexChart
-              options={optionsTemp}
-              series={tempSeries}
-              type="line"
-              height={360}
-            />
+            <HighchartsReact highcharts={Highcharts} options={optionsTemp} />
           </div>
         </div>
         <div>
@@ -668,12 +667,7 @@ const Dashboard = () => {
           </div>
           {/* Chart Card */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
-            <ReactApexChart
-              options={optionsHumid}
-              series={humidSeries}
-              type="line"
-              height={360}
-            />
+            <HighchartsReact highcharts={Highcharts} options={optionsHumid} />
           </div>
         </div>
       </div>
