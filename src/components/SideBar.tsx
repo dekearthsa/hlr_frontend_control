@@ -3,7 +3,7 @@ import axios from "axios";
 import useSWR from "swr";
 
 type RegenSettings = {
-  fanVolt: number; // volt
+  fanVolt: number; // volt //
   heaterTemp: number; // °C
   durationMin: number; // minutes
 };
