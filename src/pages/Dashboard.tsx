@@ -86,12 +86,17 @@ function buildChartOptions(
   windowEnd: number
 ): Highcharts.Options {
   return {
+    time: {
+      timezone: "Asia/Bangkok", // ใช้เวลาไทย
+      // useUTC: false,          // ถ้าอยากบังคับไม่ใช้ UTC ก็ใส่ได้
+    },
     chart: {
       type: "spline",
       height: 360,
       backgroundColor: "transparent",
       style: { fontFamily: "Inter, 'Noto Sans Thai', sans-serif" },
     },
+
     title: { text: undefined },
     legend: {
       itemStyle: { color: "#cbd5e1" },
@@ -101,10 +106,16 @@ function buildChartOptions(
       min: windowStart,
       max: windowEnd,
       crosshair: { color: "rgba(148,163,184,0.35)" },
-      labels: { style: { color: "#94a3b8" } },
+      labels: {
+        style: { color: "#94a3b8" },
+        format: "{value:%d/%m %H:%M}", // 👈 บังคับให้เป็น 24 ชม. เช่น 13:05
+        // ถ้าอยากเห็นวินาทีด้วย:
+        // format: "{value:%H:%M:%S}",
+      },
       lineColor: "#334155",
       tickColor: "#334155",
     },
+
     yAxis: {
       title: { text: yAxisTitle, style: { color: "#cbd5e1" } },
       labels: { style: { color: "#94a3b8" } },

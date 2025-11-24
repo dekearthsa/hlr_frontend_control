@@ -16,11 +16,11 @@ Environment="CHOKIDAR_USEPOLLING=true"
 
 ExecStart=/usr/bin/npm run dev -- --host=0.0.0.0 --port=5173
 
-# ทนทานต่อการหลุด
+
 Restart=always
 RestartSec=3
 
-# Log ลง journalctl
+
 StandardOutput=journal
 StandardError=journal
 
