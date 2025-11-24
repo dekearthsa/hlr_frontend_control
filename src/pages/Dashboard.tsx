@@ -96,8 +96,13 @@ function buildChartOptions(
       backgroundColor: "transparent",
       style: { fontFamily: "Inter, 'Noto Sans Thai', sans-serif" },
 
-      zoomType: "x", // 👈 เพิ่มบรรทัดนี้
-      panning: true, // 👈 ลากกราฟได้ (optional)
+      zooming: {
+        type: "x",
+      },
+      panning: {
+        enabled: true,
+        type: "x",
+      },
       panKey: "shift", // 👈 ต้องกด Shift ค้างเพื่อ pan (optional)
       resetZoomButton: {
         theme: {
