@@ -95,6 +95,18 @@ function buildChartOptions(
       height: 360,
       backgroundColor: "transparent",
       style: { fontFamily: "Inter, 'Noto Sans Thai', sans-serif" },
+
+      zoomType: "x", // 👈 เพิ่มบรรทัดนี้
+      panning: true, // 👈 ลากกราฟได้ (optional)
+      panKey: "shift", // 👈 ต้องกด Shift ค้างเพื่อ pan (optional)
+      resetZoomButton: {
+        theme: {
+          fill: "#1e293b",
+          stroke: "#64748b",
+          r: 4,
+          style: { color: "#e2e8f0" },
+        },
+      },
     },
 
     title: { text: undefined },
