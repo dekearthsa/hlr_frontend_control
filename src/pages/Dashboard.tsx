@@ -646,19 +646,20 @@ const Dashboard = () => {
                     <div className="grid grid-cols-3 mt-3">
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto ">
                         <div>CO₂ (ppm)</div>
-                        <div className="mt-10 text-[23px]">{el.co2}</div>
+                        <div className="mt-10 text-[23px]">
+                          {el.co2?.toFixed?.(2) ?? ""}
+                        </div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Temperature (C)</div>
                         <div className="mt-10 text-[23px]">
-                          {el.temperature}
+                          {el.temperature?.toFixed?.(2) ?? ""}
                         </div>
                       </div>
                       <div className="border-[1px] border-gray-500 p-2 w-[200px] rounded-lg text-center m-auto">
                         <div>Humidity (%RH)</div>
                         <div className="mt-10 text-[23px]">
-                          {el.humidity}{" "}
-                          %
+                          {el.humidity?.toFixed?.(2) ?? ""}%
                         </div>
                       </div>
                     </div>
