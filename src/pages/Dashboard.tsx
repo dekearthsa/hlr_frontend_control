@@ -198,7 +198,7 @@ const Dashboard = () => {
   // const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
   const [apIaq, setApIaq] = useState<ApIaqRow[]>([]);
-  const [apLatestCo2, setApLatestCo2] = useState<number | null>(null);
+  // const [apLatestCo2, setApLatestCo2] = useState<number | null>(null);
   // const [isSystemRunning, setIsSystemRunning] = useState(false);
   // const [lastest, setLastest] = useState(0);
   const latesttimeRef = useRef<number>(0);
@@ -257,7 +257,7 @@ const Dashboard = () => {
         // if (standby) return;
         if (!d?.length) return;
         latesttimeRef.current = d[d.length - 1].timestamp;
-        console.log("data => ", d);
+        // console.log("data => ", d);
         setIaq((prev) => {
           const cutoff = Date.now() - timeHis;
           const merged = [...prev, ...d];
@@ -301,8 +301,8 @@ const Dashboard = () => {
           const result = Array.from(map.values())
             .filter((r) => r.timestamp >= cutoff)
             .sort((a, b) => a.timestamp - b.timestamp);
-          const latest = result[result.length - 1];
-          setApLatestCo2(latest ? latest.CO2 : null);
+          // const latest = result[result.length - 1];
+          // setApLatestCo2(latest ? latest.CO2 : null);
           return result;
         });
       },
@@ -339,8 +339,8 @@ const Dashboard = () => {
     // console.log("dataAvg => ", dataAvg);
     setIaq(newData.data);
     setApIaq(newApData.data || []);
-    const latest = newApData.data?.[newApData.data.length - 1];
-    setApLatestCo2(latest ? latest.CO2 : null);
+    // const latest = newApData.data?.[newApData.data.length - 1];
+    // setApLatestCo2(latest ? latest.CO2 : null);
     // setStandby(false);
   };
   // ถ้าอยากให้ POST อัตโนมัติเมื่อเปลี่ยนช่วงเวลา (เช่นกด 30M/1H/1D)
