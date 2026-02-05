@@ -29,6 +29,11 @@ type Row = {
   humidity: number;
 };
 
+type ApIaqRow = {
+  timestamp: number;
+  CO2: number;
+};
+
 const myApi = axios.create({
   baseURL: HTTP_API,
   headers: {
@@ -192,9 +197,12 @@ const Dashboard = () => {
   // const [standby, setStandby] = useState<boolean>(false);
   // const [isMode, setIsMode] = useState("idle");
   const [iaq, setIaq] = useState<any[]>([]);
+  const [apIaq, setApIaq] = useState<ApIaqRow[]>([]);
+  const [apLatestCo2, setApLatestCo2] = useState<number | null>(null);
   // const [isSystemRunning, setIsSystemRunning] = useState(false);
   // const [lastest, setLastest] = useState(0);
   const latesttimeRef = useRef<number>(0);
+  const latesttimeApRef = useRef<number>(0);
   const nowMs = useNowTicker(10000); // tickSpeed
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
@@ -268,8 +276,42 @@ const Dashboard = () => {
     }
   );
 
+  const { mutate: mutateApIaq } = useSWR(
+    [
+      `${HTTP_API}/loop/data/ap-iaq`,
+      {
+        start: Date.now() - timeHis,
+        latesttime: latesttimeApRef.current || 0,
+        rangeSelected: 0,
+      },
+    ],
+    postFetcher,
+    {
+      refreshInterval: 100000,
+      onSuccess: (d: ApIaqRow[]) => {
+        if (!d?.length) return;
+        latesttimeApRef.current = d[d.length - 1].timestamp;
+        setApIaq((prev) => {
+          const cutoff = Date.now() - timeHis;
+          const merged = [...prev, ...d];
+          const map = new Map<number, ApIaqRow>();
+          for (const r of merged) {
+            map.set(r.timestamp, r);
+          }
+          const result = Array.from(map.values())
+            .filter((r) => r.timestamp >= cutoff)
+            .sort((a, b) => a.timestamp - b.timestamp);
+          const latest = result[result.length - 1];
+          setApLatestCo2(latest ? latest.CO2 : null);
+          return result;
+        });
+      },
+    }
+  );
+
   const handleExport = async () => {
     await mutate(); // โพสต์ด้วยคีย์ปัจจุบัน (start/latesttime) แล้วอัปเดต data
+    await mutateApIaq();
   };
 
   const labelSensor = (sid: string) =>
@@ -288,10 +330,17 @@ const Dashboard = () => {
       rangeSelected: ms,
     };
     const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
+    const newApData = await axios.post(
+      `${HTTP_API}/loop/data/ap-iaq`,
+      payload
+    );
     console.log("newData => ", newData.data);
     // const dataAvg = averagePerMinute(newData.data, ms);
     // console.log("dataAvg => ", dataAvg);
     setIaq(newData.data);
+    setApIaq(newApData.data || []);
+    const latest = newApData.data?.[newApData.data.length - 1];
+    setApLatestCo2(latest ? latest.CO2 : null);
     // setStandby(false);
   };
   // ถ้าอยากให้ POST อัตโนมัติเมื่อเปลี่ยนช่วงเวลา (เช่นกด 30M/1H/1D)
@@ -439,6 +488,27 @@ const Dashboard = () => {
     [co2Series, windowStart, nowMs]
   );
 
+  const apCo2Series = useMemo<Highcharts.SeriesSplineOptions[]>(
+    () => [
+      {
+        type: "spline",
+        name: "CO₂-AP",
+        data: apIaq
+          .filter((r) => r.timestamp >= windowStart && r.timestamp <= nowMs)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((r) => ({ x: r.timestamp, y: r.CO2 })),
+        connectNulls: true,
+      },
+    ],
+    [apIaq, windowStart, nowMs]
+  );
+
+  const optionsApCo2 = useMemo<Highcharts.Options>(
+    () =>
+      buildChartOptions(apCo2Series, "CO₂-AP (ppm)", "ppm", windowStart, nowMs),
+    [apCo2Series, windowStart, nowMs]
+  );
+
   const optionsTemp = useMemo<Highcharts.Options>(
     () => buildChartOptions(tempSeries, "Temp (°C)", "°C", windowStart, nowMs),
     [tempSeries, windowStart, nowMs]
@@ -476,17 +546,7 @@ const Dashboard = () => {
                 <label>Previous</label>
               </div>
               <div className="flex">
-                {/* <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    timeHis === 2592000000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTimeHis(2592000000);
-                    handlerStartGet(2592000000);
-                  }}
-                >
-                  1MONTH
-                </button> */}
+                
                 <button
                   className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
                     timeHis === 604800000 ? "bg-gray-600" : ""
@@ -555,74 +615,6 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-
-            {/* <div className="mt-5">
-              <div className="mr-10 mb-2">
-                <label>Step</label>
-              </div>
-              <div className="flex">
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 60 * 60 * 1000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(60 * 60 * 1000);
-                  }}
-                >
-                  1HRS
-                </button>
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 10 * 60 * 1000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(10 * 60 * 1000);
-                  }}
-                >
-                  10MIN
-                </button>
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 60 * 1000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(60 * 1000);
-                  }}
-                >
-                  1MIN
-                </button>
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 10000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(10000);
-                  }}
-                >
-                  10S
-                </button>
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 5000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(5000);
-                  }}
-                >
-                  5S
-                </button>
-                <button
-                  className={`mr-3 border-[1px] border-gray-700 p-2 rounded-lg ${
-                    tickSpeed === 1000 ? "bg-gray-600" : ""
-                  }`}
-                  onClick={() => {
-                    setTickSpeed(1000);
-                  }}
-                >
-                  1S
-                </button>
-              </div>
-            </div> */}
           </div>
         </div>
 
@@ -675,6 +667,17 @@ const Dashboard = () => {
           <div className="px-4 pb-8">
             <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
               <HighchartsReact highcharts={Highcharts} options={optionsCo2} />
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="p-4 text-[20px] font-semibold text-gray-100">
+            CO₂-AP (ppm)
+          </div>
+          {/* Chart Card */}
+          <div className="px-4 pb-8">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 shadow p-4">
+              <HighchartsReact highcharts={Highcharts} options={optionsApCo2} />
             </div>
           </div>
         </div>
