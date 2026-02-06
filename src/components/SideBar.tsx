@@ -172,6 +172,55 @@ const SideBar = () => {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null); // popover for each card
 
+  const [offsetData, setOffsetData] = useState({
+    after_scrub: { plus: -19.479471, multiplier: 1.02367265, offset: 0.0 },
+    before_scrub: { plus: -99.184335, multiplier: 0.970384222, offset: 0.0 },
+    interlock_4c: { plus: 0.0, multiplier: 0.0, offset: 0.0 },
+  });
+  const [isLoadingOffset, setIsLoadingOffset] = useState(false);
+
+  const fetchOffsetData = async () => {
+    setIsLoadingOffset(true);
+    try {
+      const { data } = await axios.get(
+        "https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/offset/get?systemID=rd2"
+      );
+      if (data) {
+        setOffsetData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch offset data", error);
+      alert("Failed to fetch offset data");
+    } finally {
+      setIsLoadingOffset(false);
+    }
+  };
+
+  useEffect(() => {
+    if (menuPage === "offset") {
+      fetchOffsetData();
+    }
+  }, [menuPage]);
+
+  const handleUpdateOffset = async () => {
+    try {
+      const payload = {
+        systemID: "rd2",
+        topic: "rd2_windttunnel/device/data",
+        ...offsetData,
+      };
+      console.log("payload => ",payload)
+      await axios.post(
+        "https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/offset/update",
+        payload
+      );
+      alert("Offset updated successfully!");
+    } catch (error) {
+      console.error("Failed to update offset", error);
+      alert("Failed to update offset");
+    }
+  };
+
   const handleManaulStart = async () => {
     const payload = {
       fanVolt: manualFanVolt,
@@ -369,6 +418,14 @@ const SideBar = () => {
             onClick={() => setMenuPage("export")}
           >
             Export Data
+          </button>
+          <button
+            className={`ml-1 border-[1px] border-gray-700 rounded-t-md pl-3 pr-3 ${
+              menuPage === "offset" ? "bg-gray-500" : ""
+            }`}
+            onClick={() => setMenuPage("offset")}
+          >
+            Offset
           </button>
         </div>
       </div>
@@ -1067,6 +1124,67 @@ const SideBar = () => {
                 Export CSV
               </button>
             </div>
+          </div>
+        </div>
+      ) : (
+        <div></div>
+      )}
+
+      {menuPage === "offset" ? (
+        <div className="overflow-y-auto">
+          <div className="px-6 pb-36 space-y-6 flex-1 mt-4">
+            <h3 className="text-sm uppercase tracking-wider text-gray-400">
+              Update Offset
+            </h3>
+            {isLoadingOffset ? (
+              <div className="text-center py-10 text-gray-400">
+                Loading offset data...
+              </div>
+            ) : (
+              <>
+                {Object.entries(offsetData).map(([key, val]) => (
+                  <section key={key} className="space-y-4">
+                    <h4 className="text-sm uppercase tracking-wider text-gray-400">
+                      {key.replace("_", " ")}
+                    </h4>
+                    {(["plus", "multiplier", "offset"] as const).map(
+                      (field) => (
+                        <div
+                          key={field}
+                          className="grid grid-cols-12 items-center gap-3"
+                        >
+                          <label className="col-span-4 text-sm text-gray-300 capitalize">
+                            {field}
+                          </label>
+                          <input
+                            type="number"
+                            step="0.000001"
+                            className="col-span-8 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={val[field]}
+                            onChange={(e) =>
+                              setOffsetData((prev) => ({
+                                ...prev,
+                                [key]: {
+                                  ...prev[key as keyof typeof offsetData],
+                                  [field]: parseFloat(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      )
+                    )}
+                    <hr className="border-gray-700" />
+                  </section>
+                ))}
+                <button
+                  onClick={handleUpdateOffset}
+                  className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold tracking-wider"
+                >
+                  UPDATE OFFSET
+                </button>
+              </>
+            )}
           </div>
         </div>
       ) : (
