@@ -279,7 +279,7 @@ const Dashboard = () => {
 
   const { mutate: mutateApIaq } = useSWR(
     [
-      `${HTTP_API}/loop/data/ap-iaq`,
+      `https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/data/iaq`,
       {
         start: nowMs - timeHis,
         latesttime: latesttimeApRef.current || 0,
@@ -289,7 +289,7 @@ const Dashboard = () => {
     postFetcher,
     {
       refreshInterval: 100000,
-      onSuccess: (d: ApIaqRow[]) => {
+      onSuccess: (d: ApIaqRow[]) => { 
         if (!d?.length) return;
         latesttimeApRef.current = d[d.length - 1].timestamp;
         setApIaq((prev) => {
