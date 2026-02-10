@@ -35,7 +35,7 @@ type ApIaqRow = {
 };
 
 const myApi = axios.create({
-  baseURL: HTTP_API,
+  baseURL: 'https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com',
   headers: {
     "ngrok-skip-browser-warning": "true",
     Accept: "application/json",
@@ -203,7 +203,7 @@ const Dashboard = () => {
   // const [lastest, setLastest] = useState(0);
   const latesttimeRef = useRef<number>(0);
   const latesttimeApRef = useRef<number>(0);
-  const nowMs = useNowTicker(10000); // tickSpeed
+  const nowMs = useNowTicker(5000); // tickSpeed
   const windowStart = nowMs - timeHis;
   // const stepMs = pickStepMs(timeHis);
 
@@ -222,8 +222,8 @@ const Dashboard = () => {
   };
 
   const handleGetStatus = async () => {
-    const { data } = await myApi.get(`/get/status`);
-    // console.log("data => ", data);
+    const { data } = await myApi.get(`/data/state`);
+    console.log("data => ", data);
     const modeOut = handleMode(data[0].systemState);
     // console.log(data);
     const stateP = {
@@ -243,9 +243,10 @@ const Dashboard = () => {
 
   const { mutate } = useSWR(
     [
-      `${HTTP_API}/loop/data/iaq`,
+      // `${HTTP_API}/loop/data/iaq`,
+      `https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/data/get`,
       {
-        start: Date.now() - timeHis,
+        start: nowMs - timeHis,
         latesttime: latesttimeRef.current || 0,
         rangeSelected: 0,
       },
@@ -266,7 +267,7 @@ const Dashboard = () => {
             const key = r.id ?? `${r.sensor_id}-${r.timestamp}`;
             map.set(key, r); // ของใหม่จะทับของเก่าอัตโนมัติ
           }
-          handleGetStatus();
+          handleGetStatus(); 
           return Array.from(map.values())
             .filter((r) => r.timestamp >= cutoff)
             .sort((a, b) => a.timestamp - b.timestamp);
@@ -280,7 +281,7 @@ const Dashboard = () => {
     [
       `${HTTP_API}/loop/data/ap-iaq`,
       {
-        start: Date.now() - timeHis,
+        start: nowMs - timeHis,
         latesttime: latesttimeApRef.current || 0,
         rangeSelected: 0,
       },
@@ -334,7 +335,7 @@ const Dashboard = () => {
       `${HTTP_API}/loop/data/ap-iaq`,
       payload
     );
-    console.log("newData => ", newData.data);
+    // console.log("newData => ", newData.data);
     // const dataAvg = averagePerMinute(newData.data, ms);
     // console.log("dataAvg => ", dataAvg);
     setIaq(newData.data);
@@ -349,24 +350,13 @@ const Dashboard = () => {
   }, [timeHis]); // <-- เปลี่ยนช่วงเวลา = ยิง POST หนึ่งครั้ง
 
   const getLastestIAQData = async (data: any) => {
-    const arraySensor1 = [];
-    const arraySensor2 = [];
-    const arraySensor3 = [];
-    const arraySensor4 = [];
+    // console.log("data getLastestIAQData => ", data);
+
+    const arraySensor2: any[] = [];
+    const arraySensor3: any[] = [];
 
     for (const el of data) {
-      if (el.sensor_id === "1") {
-        const payload = {
-          id: el.id,
-          label: "Calibrate",
-          sensor_id: el.sensor_id,
-          timestamp: el.timestamp,
-          co2: el.co2,
-          temperature: el.temperature,
-          humidity: el.humidity,
-        };
-        arraySensor1.push(payload);
-      } else if (el.sensor_id === "2") {
+      if (el.sensor_id === 2) {
         const payload = {
           id: el.id,
           label: "Outlet",
@@ -377,7 +367,7 @@ const Dashboard = () => {
           humidity: el.humidity,
         };
         arraySensor2.push(payload);
-      } else if (el.sensor_id === "3") {
+      } else if (el.sensor_id === 3) {
         const payload = {
           id: el.id,
           label: "Inlet",
@@ -388,70 +378,45 @@ const Dashboard = () => {
           humidity: el.humidity,
         };
         arraySensor3.push(payload);
-      } else if (el.sensor_id === "4") {
-        const payload = {
-          id: el.id,
-          label: "Regen",
-          sensor_id: el.sensor_id,
-          timestamp: el.timestamp,
-          co2: el.co2,
-          temperature: el.temperature,
-          humidity: el.humidity,
-        };
-        arraySensor4.push(payload);
       }
     }
-    // console.log("arraySensor2 => ", arraySensor2);
-    const latest1 =
-      arraySensor1.length > 0
-        ? arraySensor1[arraySensor1.length - 1]
-        : {
-            id: "-",
-            sensor_id: 0,
-            timestamp: 0,
-            co2: 0,
-            humidity: 0,
-            temperature: 0,
-            mode: "",
-          };
-    const latest2 =
-      arraySensor2.length > 0
-        ? arraySensor2[arraySensor2.length - 1]
-        : {
-            id: "-",
-            sensor_id: 0,
-            timestamp: 0,
-            co2: 0,
-            humidity: 0,
-            temperature: 0,
-            mode: "",
-          };
-    const latest3 =
-      arraySensor3.length > 0
-        ? arraySensor3[arraySensor3.length - 1]
-        : {
-            id: "-",
-            sensor_id: 0,
-            timestamp: 0,
-            co2: 0,
-            humidity: 0,
-            temperature: 0,
-            mode: "",
-          };
-    const latest4 =
-      arraySensor4.length > 0
-        ? arraySensor4[arraySensor4.length - 1]
-        : {
-            id: "-",
-            sensor_id: 0,
-            timestamp: 0,
-            co2: 0,
-            humidity: 0,
-            temperature: 0,
-            mode: "",
-          };
-    const arrayData = [latest1, latest2, latest3, latest4];
-    setNewestIAQ(arrayData);
+
+    setNewestIAQ((prev) => {
+      const prev2 = prev?.[0];
+      const prev3 = prev?.[1];
+
+      const latest2 =
+        arraySensor2.length > 0
+          ? arraySensor2[arraySensor2.length - 1]
+          : prev2
+          ? prev2
+          : {
+              id: "-",
+              sensor_id: 0,
+              timestamp: 0,
+              co2: 0,
+              humidity: 0,
+              temperature: 0,
+              mode: "",
+            };
+
+      const latest3 =
+        arraySensor3.length > 0
+          ? arraySensor3[arraySensor3.length - 1]
+          : prev3
+          ? prev3
+          : {
+              id: "-",
+              sensor_id: 0,
+              timestamp: 0,
+              co2: 0,
+              humidity: 0,
+              temperature: 0,
+              mode: "",
+            };
+
+      return [latest2, latest3];
+    });
   };
 
   // --- 5) ซีรีส์ที่ “เลื่อนทุกวินาที” และมีช่องว่างเมื่อไม่มีข้อมูล
