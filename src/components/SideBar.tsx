@@ -178,6 +178,7 @@ const SideBar = () => {
     interlock_4c: { plus: 0.0, multiplier: 0.0, offset: 0.0 },
   });
   const [isLoadingOffset, setIsLoadingOffset] = useState(false);
+  const [avgWindow, setAvgWindow] = useState<number>(2);
 
   const fetchOffsetData = async () => {
     setIsLoadingOffset(true);
@@ -218,6 +219,39 @@ const SideBar = () => {
     } catch (error) {
       console.error("Failed to update offset", error);
       alert("Failed to update offset");
+    }
+  };
+
+  const handleDownloadIAQ = async () => {
+    try {
+      const sT = `${startDate}T${startH}:${startM}:${startS}+07:00`;
+      const eT = `${endDate}T${endH}:${endM}:${endS}+07:00`;
+
+      const payload = {
+        start_time: sT,
+        end_time: eT,
+        average_window: avgWindow,
+      };
+
+      const response = await axios.post(
+        "https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/download/rd2-iaq",
+        payload,
+        {
+          responseType: "blob", // Important for downloading files
+        }
+      );
+
+      // Create a blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "iaq_data.csv"); // or any other extension
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Failed to download IAQ data", error);
+      alert("Failed to download IAQ data");
     }
   };
 
@@ -426,6 +460,14 @@ const SideBar = () => {
             onClick={() => setMenuPage("offset")}
           >
             Offset
+          </button>
+          <button
+            className={`ml-1 border-[1px] border-gray-700 rounded-t-md pl-3 pr-3 ${
+              menuPage === "iaq" ? "bg-gray-500" : ""
+            }`}
+            onClick={() => setMenuPage("iaq")}
+          >
+            Download IAQ
           </button>
         </div>
       </div>
@@ -1190,6 +1232,133 @@ const SideBar = () => {
       ) : (
         <div></div>
       )}
+
+      {menuPage === "iaq" ? (
+        <div className="overflow-y-auto">
+          <div className="px-6 pb-36 space-y-6 flex-1 mt-4">
+            <h3 className="text-sm uppercase tracking-wider text-gray-400">
+              Download IAQ Data
+            </h3>
+
+            {/* START */}
+            <section className="space-y-2">
+              <div className="text-xs text-gray-400">Start Time (+07:00)</div>
+              <div className=" items-center">
+                <input
+                  type="date"
+                  className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <div className="mt-3">
+                  <select
+                    className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={startH}
+                    onChange={(e) => setStartH(e.target.value)}
+                  >
+                    {hours.map((h) => (
+                      <option key={h} value={h}>
+                        {h} h
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="ml-3 col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={startM}
+                    onChange={(e) => setStartM(e.target.value)}
+                  >
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>
+                        {m} m
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="ml-3 col-span-3 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={startS}
+                    onChange={(e) => setStartS(e.target.value)}
+                  >
+                    {seconds.map((s) => (
+                      <option key={s} value={s}>
+                        {s} s
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            {/* END */}
+            <section className="space-y-2">
+              <div className="text-xs text-gray-400">End Time (+07:00)</div>
+              <div className=" items-center">
+                <input
+                  type="date"
+                  className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+                <div className="mt-3">
+                  <select
+                    className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={endH}
+                    onChange={(e) => setEndH(e.target.value)}
+                  >
+                    {hours.map((h) => (
+                      <option key={h} value={h}>
+                        {h} h
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="ml-3 col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={endM}
+                    onChange={(e) => setEndM(e.target.value)}
+                  >
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>
+                        {m} m
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="ml-3 col-span-3 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2"
+                    value={endS}
+                    onChange={(e) => setEndS(e.target.value)}
+                  >
+                    {seconds.map((s) => (
+                      <option key={s} value={s}>
+                        {s} s
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            {/* Average Window */}
+            <section className="space-y-2">
+              <div className="text-xs text-gray-400">Average Window</div>
+              <input
+                type="number"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+                value={avgWindow}
+                onChange={(e) => setAvgWindow(Number(e.target.value))}
+              />
+            </section>
+
+            <button
+              onClick={handleDownloadIAQ}
+              className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold tracking-wider"
+            >
+              DOWNLOAD DATA
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div></div>
+      )}
+
     </div>
   );
 };

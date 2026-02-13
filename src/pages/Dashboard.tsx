@@ -9,7 +9,7 @@ import axios from "axios";
 
 // const HTTP_API = "https://4fbf7b7f1d3d.ngrok-free.app";
 // const HTTP_API = "http://172.29.246.80:3011";
-const HTTP_API = "https://api1.bkkcodedevearthregisterdemobkk.work";
+// const HTTP_API = "https://api1.bkkcodedevearthregisterdemobkk.work";
 // const HTTP_API = "http://localhost:3011";
 // const HTTP_API = "http://192.168.1.39:3011";
 
@@ -330,9 +330,8 @@ const Dashboard = () => {
       latesttime: 0,
       rangeSelected: ms,
     };
-    const newData = await axios.post(`${HTTP_API}/loop/data/iaq`, payload);
-    const newApData = await axios.post(
-      `${HTTP_API}/loop/data/ap-iaq`,
+    const newData = await axios.post(`https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/data/get`, payload);
+    const newApData = await axios.post(`https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/data/iaq`,
       payload
     );
     // console.log("newData => ", newData.data);
