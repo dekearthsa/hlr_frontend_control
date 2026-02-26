@@ -207,6 +207,7 @@ const SideBar = () => {
     try {
       const payload = {
         systemID: "rd2",
+        command: "set-offset",
         topic: "rd2_windttunnel/device/data",
         ...offsetData,
       };
@@ -322,6 +323,7 @@ const SideBar = () => {
     // };
     const comm = {
       cyclicName: title,
+      command: "auto-run",
       systemType: "auto",
       regenFan: regen.fanVolt,
       regenHeater: regen.heaterTemp,
@@ -335,14 +337,19 @@ const SideBar = () => {
     };
 
     console.log("START ▶️", comm);
-    await myApi.post(`/start`, comm);
+    // await myApi.post(`/start`, comm);
+    await myApi.post(`/operate/device-auto-on`, comm);
     setOperateIn("auto");
   };
   const handleStop = async () => {
     setRunning("idle");
     console.log("STOP ⏹️");
-    await myApi.get(`/manual/stop`);
-    // await axios.get(`${HTTP_API}/stop`);
+    // await myApi.get(`/manual/stop`);
+    const payload = {
+      systemID: "rd2",
+      topic: "rd2_windttunnel/device/data",
+    }
+    await myApi.post(`/operate/device-off`, payload);
     setOperateIn("idle");
     console.log(isOperateIn);
   };
