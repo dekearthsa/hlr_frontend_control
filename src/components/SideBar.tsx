@@ -338,7 +338,8 @@ const SideBar = () => {
 
     console.log("START ▶️", comm);
     // await myApi.post(`/start`, comm);
-    await myApi.post(`/operate/device-auto-on`, comm);
+    await axios.post("https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/operate/device-auto-on", comm);
+    // await myApi.post(`/operate/device-auto-on`, comm);
     setOperateIn("auto");
   };
   const handleStop = async () => {
@@ -349,7 +350,8 @@ const SideBar = () => {
       systemID: "rd2",
       topic: "rd2_windttunnel/device/data",
     }
-    await myApi.post(`/operate/device-off`, payload);
+    await axios.post("https://6cq2hsx83h.execute-api.ap-southeast-1.amazonaws.com/operate/device-off", payload);
+    // await myApi.post(`/operate/device-off`, payload);
     setOperateIn("idle");
     console.log(isOperateIn);
   };
