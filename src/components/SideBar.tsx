@@ -36,7 +36,7 @@ const myApi = axios.create({
     "ngrok-skip-browser-warning": "true",
     Accept: "application/json",
   },
-  timeout: 8000,
+  timeout: 30000,
 });
 
 const SideBar = () => {
