@@ -218,18 +218,22 @@ const Dashboard = () => {
       return "idle";
     } else if (setType === "regen") {
       return "scrub";
+    }else if(setType === "regen_firsttime"){
+      return "regen";
     }
+
   };
 
   const handleGetStatus = async () => {
     const { data } = await myApi.get(`/data/state`);
-    console.log("data => ", data);
+    console.log("data => handleGetStatus ", data);
     const modeOut = handleMode(data[0].systemState);
-    // console.log(data);
+    console.log(data);
     const stateP = {
       system: data[0].systemType,
       mode: modeOut ? modeOut : "Error can't find state.",
     };
+    console.log("stateP => ", stateP);
     // console.log("stateP => ", stateP);
     const ms = Date.now();
     const endTime = data[0].endtime;
